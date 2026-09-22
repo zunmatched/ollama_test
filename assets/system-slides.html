@@ -37,16 +37,13 @@
   <aside class="slide-note" data-source="src/tools.py；src/agent.py">四個使用情境都透過同一套 agent loop 執行。除了這些功能，還有 find_stocks 可以把股票名稱轉成代號。新聞目前是關鍵字與股票標籤篩選；不要將它介紹為向量 RAG。介面保留工具名稱、參數、結果與耗時，方便核對。</aside>
 </section>
 
-<section class="slide" data-title="原始資料與本機資料庫" aria-label="第3頁 原始資料與本機資料庫">
-  <h2>原始資料與本機資料庫</h2><p class="lead">準備階段取得資料，現場只查筆電上的快照。</p>
-  <div class="data-flow">
-    <div><p class="phase">準備階段 · 需要連線</p><h3>PostgreSQL</h3><p class="body">保存原始股票與新聞資料<br>Python 以唯讀交易匯出限定範圍</p></div>
-    <div class="arrow" aria-label="匯出">→</div>
-    <div><p class="phase">展示階段 · 本機執行</p><h3 class="accent">PostgreSQL + pgvector</h3><p class="body">WSL Docker 保存本機快照<br>Agent 不連回遠端資料庫</p></div>
-  </div>
-  <div class="data-stats"><div><strong>8</strong><span>檔股票</span></div><div><strong>989</strong><span>筆行情</span></div><div><strong>300</strong><span>則新聞</span></div><div><strong style="font-size:31px;line-height:1.65">2026-09-21</strong><span>行情截止日期</span></div></div>
-  <div class="footer"><span>快照建立於 2026-09-22；資料檔與密碼不納入 Git</span><span class="num">03 / 09</span></div>
-  <aside class="slide-note" data-source="scripts/export_snapshot.py；scripts/setup-postgres.py；docs/POSTGRES.md">Agent 現在查詢筆電上的 PostgreSQL 17，已啟用 pgvector 0.8.6。遠端原始資料庫未修改。限定範圍的快照匯入本機 WSL Docker，保留原快照作為備援。pgvector 已驗證距離運算，但尚未建立新聞 embedding，新聞仍採關鍵字搜尋。套件、模型與網頁資源都在本機，但整機斷網演練仍需實際確認。</aside>
+<section class="slide" data-title="展示資料範圍" aria-label="第3頁 展示資料範圍">
+  <h2>展示資料範圍</h2><p class="lead">這份 Demo 使用有限的本機市場資料快照。</p>
+  <div class="two content"><div class="rule"><h3>可查股票</h3><p class="body">2002 中鋼　2303 聯電<br>2330 台積電　2337 旺宏<br>2344 華邦電　2408 南亞科<br>2454 聯發科　8046 南電</p></div>
+  <div class="rule"><h3>資料內容</h3><p class="body">989 筆歷史行情<br>300 則新聞<br>行情截止 2026-09-21</p></div></div>
+  <p class="guard-note">例如 0050 尚未匯入。系統會先查核標的，再清楚回報資料缺漏。</p>
+  <div class="footer"><span>本機 PostgreSQL + pgvector；新聞目前使用關鍵字查詢</span><span class="num">03 / 09</span></div>
+  <aside class="slide-note" data-source="scripts/setup-postgres.py；scripts/verify_postgres.py；src/agent.py">這頁交代 demo 的資料範圍，避免將有限快照誤認為全市場或即時資料。使用者詢問不存在的 0050 時，程式會用 find_stocks 查核後明確回覆尚未匯入，而不是讓模型猜測。資料庫部署在本機 PostgreSQL 17，pgvector 已啟用，但新聞還沒有可驗證的 embedding，所以仍採關鍵字搜尋。</aside>
 </section>
 
 <section class="slide" data-title="系統架構" aria-label="第4頁 系統架構">
