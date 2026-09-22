@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Local Stock Lab 系統介紹：地端模型、SQLite 快照、工具呼叫與實測結果。">
+<title>Local Stock Lab｜系統介紹</title>
+<style>
+:root{color-scheme:dark;--bg:#0c1319;--surface:#121f27;--ink:#edf3f2;--muted:#aec0c7;--green:#98e0c0;--line:#36504e;--gold:#f2d093}
+*{box-sizing:border-box}body{margin:0;background:#070d12;color:var(--ink);font-family:"Segoe UI","Microsoft JhengHei",sans-serif;overflow:hidden}button,a{font:inherit}button{cursor:pointer}button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:4px}#viewport{height:calc(100dvh - 58px);display:flex;align-items:center;justify-content:center;padding:18px}#frame{position:relative;flex-shrink:0}#deck{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:top left;background:var(--bg);overflow:hidden;box-shadow:0 24px 80px #0006}.slide{position:absolute;inset:0;padding:58px 76px 52px;display:none;overflow:hidden}.slide.active{display:block}.slide h1,.slide h2,.slide h3,.slide p{margin:0}h1{font-size:76px;line-height:1.25;letter-spacing:2px;font-weight:600}h2{font-size:44px;line-height:1.3;font-weight:600;letter-spacing:.5px}h3{font-size:25px;font-weight:600;line-height:1.5}.lead{font-size:23px;line-height:1.7;color:var(--muted);margin-top:18px!important}.kicker{font-size:15px;color:var(--green);letter-spacing:3px;margin-bottom:23px!important;font-weight:600}.accent{color:var(--green)}.muted{color:var(--muted)}.footer{position:absolute;left:76px;right:76px;bottom:25px;display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:13px;letter-spacing:1px;border-top:1px solid #26383e;padding-top:13px}.footer .num{color:var(--green)}.content{margin-top:36px}.two{display:grid;grid-template-columns:1fr 1fr;gap:64px}.rule{border-top:1px solid var(--line);padding-top:21px}.body{font-size:22px;line-height:1.8}.small{font-size:17px;line-height:1.7;color:var(--muted)}.caption{font-size:16px;color:var(--muted);line-height:1.6}.cover{padding-top:83px}.cover h1{margin-top:48px}.cover .subtitle{font-size:28px;color:var(--muted);line-height:1.7;margin-top:26px}.cover .stack{margin-top:56px;border-top:1px solid var(--line);padding-top:25px;display:flex;gap:34px;font-size:21px;color:var(--green)}.cover .edition{position:absolute;right:76px;top:86px;font-size:16px;color:var(--muted);text-align:right;line-height:1.7}table{width:100%;border-collapse:collapse;font-size:22px;line-height:1.5}th{text-align:left;font-size:16px;font-weight:400;color:var(--muted);padding:0 16px 15px 0;border-bottom:1px solid var(--line)}td{padding:21px 16px 21px 0;border-bottom:1px solid #253b40;vertical-align:top}td:first-child{color:var(--green);white-space:nowrap;font-weight:600}.data-flow{display:grid;grid-template-columns:1fr 100px 1fr;align-items:center;gap:22px;margin-top:44px}.data-flow h3{font-size:35px}.data-flow .arrow{text-align:center;font-size:44px;color:var(--green)}.data-flow .phase{font-size:17px;color:var(--green);margin-bottom:12px}.data-flow .body{margin-top:18px}.data-stats{display:flex;gap:58px;margin-top:44px;padding-top:23px;border-top:1px solid var(--line)}.data-stats strong{font-size:41px;font-weight:500;color:var(--green)}.data-stats span{display:block;font-size:17px;color:var(--muted);margin-top:3px}.flow{display:grid;grid-template-columns:1fr 50px 1fr 50px 1fr 50px 1fr;align-items:center;margin-top:63px}.flow .node{border-top:3px solid var(--green);border-bottom:1px solid var(--line);padding:24px 0;min-height:136px}.flow .node strong{display:block;font-size:26px}.flow .node span{display:block;font-size:18px;color:var(--muted);margin-top:12px}.flow .arrow{font-size:30px;text-align:center;color:var(--green)}.loop-back{margin:25px 0 0 285px;border-bottom:1px solid var(--line);padding-bottom:18px;font-size:21px;color:var(--green)}.flow-notes{display:flex;gap:70px;margin-top:35px;font-size:19px;line-height:1.75;color:var(--muted)}.question{font-size:27px;line-height:1.6;padding:20px 0;border-bottom:1px solid var(--line);color:var(--green)}.tool-demo{display:grid;grid-template-columns:1.05fr 1fr;gap:56px;margin-top:28px}pre{margin:0;font-family:Consolas,"Microsoft JhengHei",monospace;font-size:20px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}.code-label{font-size:16px;color:var(--muted);margin-bottom:13px}.steps{list-style:none;padding:0;margin:0;counter-reset:step}.steps li{position:relative;padding:0 0 18px 44px;font-size:21px;line-height:1.6;counter-increment:step}.steps li::before{content:counter(step,decimal-leading-zero);position:absolute;left:0;top:2px;font-size:17px;color:var(--green)}.formula{margin-top:27px;font-size:22px;border-top:1px solid var(--line);padding-top:17px}.checks{list-style:none;padding:0;margin:24px 0 0}.checks li{padding:15px 0;border-bottom:1px solid #253b40;font-size:22px;line-height:1.5}.checks strong{color:var(--green);font-weight:500}.guard-note{margin-top:28px;font-size:18px;line-height:1.6;color:var(--muted)}.results{display:grid;grid-template-columns:1.4fr 1fr;gap:70px;margin-top:38px}.bars{display:grid;gap:26px}.bar-row{display:grid;grid-template-columns:150px 1fr 88px;gap:16px;align-items:center;font-size:20px}.bar-track{height:20px;background:#223333}.bar-fill{height:100%;background:var(--green)}.bar-value{color:var(--green);text-align:right;font-variant-numeric:tabular-nums}.axis{display:flex;justify-content:space-between;margin-left:166px;margin-right:104px;font-size:14px;color:var(--muted)}.metric{padding:17px 0;border-top:1px solid var(--line)}.metric strong{font-size:42px;color:var(--green);font-weight:500}.metric span{font-size:20px;margin-left:12px}.metric p{font-size:17px;color:var(--muted);margin-top:7px}.results-note{margin-top:29px;font-size:17px;line-height:1.6;color:var(--muted)}.demo-list{margin-top:26px}.demo-item{display:grid;grid-template-columns:48px 155px 1fr;gap:16px;padding:24px 0;border-bottom:1px solid var(--line);align-items:start}.demo-item .index{color:var(--green);font-size:22px}.demo-item h3{font-size:24px}.demo-item p{font-size:22px;line-height:1.5}.demo-item small{display:block;color:var(--muted);font-size:17px;margin-top:9px}.demo-actions{display:flex;gap:18px;align-items:center;margin-top:30px}.demo-actions a,.demo-actions button{display:inline-block;border:1px solid var(--green);color:var(--green);background:transparent;padding:12px 23px;font-size:18px;text-decoration:none;border-radius:3px}.demo-actions a.primary{background:var(--green);color:#102a23}.status-message{font-size:16px;color:var(--muted)}.roadmap td{font-size:21px;padding:18px 12px 18px 0}.closing{font-size:25px;color:var(--green);margin-top:27px!important}.slide-note{display:none}
+#toolbar{position:fixed;bottom:0;left:0;right:0;height:58px;border-top:1px solid #293a41;background:#0a1219;display:flex;align-items:center;justify-content:space-between;padding:0 22px;gap:15px;font-size:13px;z-index:4}#toolbar .group{display:flex;align-items:center;gap:12px}#toolbar button{background:transparent;color:var(--muted);border:1px solid #33494c;border-radius:4px;padding:7px 12px;font-size:13px}#toolbar button:hover{color:var(--green);border-color:var(--green)}#toolbar button:disabled{opacity:.3;cursor:default}#counter{font-variant-numeric:tabular-nums;min-width:56px;text-align:center}#progress{position:fixed;bottom:57px;left:0;height:2px;background:var(--green);z-index:5;transition:width .15s}#notes{position:fixed;bottom:58px;left:0;right:0;height:185px;padding:18px 30px;background:#142129;border-top:1px solid #3b5e56;overflow:auto;z-index:3;line-height:1.8;font-size:15px}#notes h3{font-size:15px;color:var(--green);margin:0 0 6px}#notes p{margin:0;max-width:1150px}#note-source{font-size:12px;color:var(--muted);margin-top:7px!important}body.notes-open #viewport{height:calc(100dvh - 243px)}#overview{position:fixed;inset:0 0 58px;background:#0b151bf5;z-index:6;padding:40px max(30px,calc((100vw - 1000px)/2));overflow:auto}#overview h2{font-size:25px;margin:0 0 25px}#overview-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}#overview-grid button{background:#15242b;border:1px solid #36504e;color:var(--ink);text-align:left;padding:23px;font-size:18px;line-height:1.5}#overview-grid button span{color:var(--green);margin-right:17px}#overview-grid button[aria-current=true]{border-color:var(--green)}[hidden]{display:none!important}@media(prefers-reduced-motion:reduce){#progress{transition:none}}@media(max-width:700px){#toolbar{padding:0 10px;gap:5px}.shortcut-hint,#slide-label{display:none}#toolbar .group{gap:6px}#toolbar button{padding:7px 9px}#overview-grid{grid-template-columns:1fr}}
+@media print{@page{size:landscape;margin:0}body{background:white;overflow:visible}#viewport{display:block;height:auto!important;padding:0}#frame{width:auto!important;height:auto!important}#deck{position:static;transform:none!important;box-shadow:none;width:auto;height:auto;overflow:visible}.slide{position:relative;display:block!important;width:1280px;height:720px;break-after:page;page-break-after:always;print-color-adjust:exact;-webkit-print-color-adjust:exact;background:var(--bg)}.slide:last-child{break-after:auto}#toolbar,#progress,#notes,#overview{display:none!important}.demo-actions{display:none}}
+.flow{grid-template-columns:1fr 60px 1fr 60px 1fr;margin-top:36px}.flow .node{min-height:110px;padding:19px 0}.tool-branch{width:336px;margin-left:396px;text-align:center}.tool-branch .connector{font-size:28px;color:var(--green);line-height:1.3}.tool-branch strong{display:block;font-size:23px;margin-top:5px}.tool-branch span{font-size:17px;color:var(--muted)}.flow-notes{margin-top:23px;font-size:18px}
+</style>
+</head>
+<body>
+<main id="viewport" aria-label="系統介紹投影片"><div id="frame"><div id="deck">
+
+<section class="slide cover active" data-title="地端股票資料助理" aria-label="第1頁 地端股票資料助理">
+  <p class="kicker">LOCAL STOCK LAB</p><div class="edition">系統介紹<br>2026.09</div>
+  <h1>地端股票<br><span class="accent">資料助理</span></h1>
+  <p class="subtitle">在筆電上執行模型，<br>透過唯讀工具查詢資料並整理回答。</p>
+  <div class="stack"><span>Ollama / Qwen3</span><span>Python / FastAPI</span><span>SQLite</span></div>
+  <div class="footer"><span>個人部署與工具呼叫實作</span><span class="num">01 / 09</span></div>
+  <aside class="slide-note" data-source="README.md；docs/ARCHITECTURE.md">這個專案以我自己的股票資料為例，驗證在一般筆電上部署 LLM 並整合工具的完整流程。模型負責選擇工具與說明，查詢與數字計算由 Python 完成。這是個人實作驗證，企業上線經驗可以另外介紹。整份約5–7分鐘，現場 demo 另留2分鐘。</aside>
+</section>
+
+<section class="slide" data-title="系統功能" aria-label="第2頁 系統功能">
+  <h2>系統功能</h2><p class="lead">用自然語言提問，查看實際查詢結果與資料來源。</p>
+  <table class="content"><thead><tr><th style="width:21%">功能</th><th style="width:45%">使用者問題</th><th>執行方式</th></tr></thead><tbody>
+    <tr><td>行情查詢</td><td>台積電最近五個交易日的收盤價？</td><td>依代號與日期查詢</td></tr>
+    <tr><td>期間比較</td><td>比較兩檔股票的期間價格變化</td><td>對齊共同交易日，再計算</td></tr>
+    <tr><td>新聞整理</td><td>搜尋記憶體相關新聞並摘要</td><td>關鍵字檢索，附來源 ID</td></tr>
+    <tr><td>資料不足</td><td>查詢快照範圍以外的日期</td><td>回報缺漏，不替換日期</td></tr>
+  </tbody></table>
+  <div class="footer"><span>每題獨立對話；歷史快照資料</span><span class="num">02 / 09</span></div>
+  <aside class="slide-note" data-source="src/tools.py；src/agent.py">四個使用情境都透過同一套 agent loop 執行。除了這些功能，還有 find_stocks 可以把股票名稱轉成代號。新聞目前是關鍵字與股票標籤篩選；不要將它介紹為向量 RAG。介面保留工具名稱、參數、結果與耗時，方便核對。</aside>
+</section>
+
+<section class="slide" data-title="PostgreSQL 與 SQLite 的分工" aria-label="第3頁 PostgreSQL 與 SQLite 的分工">
+  <h2>PostgreSQL 與 SQLite 的分工</h2><p class="lead">準備階段取得資料，現場只查筆電上的快照。</p>
+  <div class="data-flow">
+    <div><p class="phase">準備階段 · 需要連線</p><h3>PostgreSQL</h3><p class="body">保存原始股票與新聞資料<br>Python 以唯讀交易匯出限定範圍</p></div>
+    <div class="arrow" aria-label="匯出">→</div>
+    <div><p class="phase">展示階段 · 本機執行</p><h3 class="accent">SQLite</h3><p class="body">保存可重現的資料快照<br>Agent 查詢時不連回 PostgreSQL</p></div>
+  </div>
+  <div class="data-stats"><div><strong>8</strong><span>檔股票</span></div><div><strong>989</strong><span>筆行情</span></div><div><strong>300</strong><span>則新聞</span></div><div><strong style="font-size:31px;line-height:1.65">2026-09-21</strong><span>行情截止日期</span></div></div>
+  <div class="footer"><span>快照建立於 2026-09-22；資料檔與密碼不納入 Git</span><span class="num">03 / 09</span></div>
+  <aside class="slide-note" data-source="scripts/export_snapshot.py；本機快照 metadata">目前真正被 agent 查詢的是 SQLite。原本的 PostgreSQL 沒有被取代，也沒有被修改。匯出器使用 repeatable-read、read-only 交易，選8檔股票、最近180天行情與最多300則有發佈日期的新聞。選 SQLite 的目的是讓明天展示不依賴家中網路，後續可透過資料層改接 PostgreSQL。套件、模型與網頁資源都在本機，但整機斷網演練仍需實際確認。</aside>
+</section>
+
+<section class="slide" data-title="系統架構" aria-label="第4頁 系統架構">
+  <h2>系統架構</h2><p class="lead">模型選工具，程式執行查詢，再把結果交回模型。</p>
+  <div class="flow" role="img" aria-label="網頁介面經由 Python Agent 呼叫 Ollama，Agent 驗證並執行 SQLite 工具；查詢結果回到模型，再回傳回答至介面">
+    <div class="node"><strong>網頁介面</strong><span>問題、回答、工具紀錄</span></div><span class="arrow">↔</span>
+    <div class="node"><strong>Python Agent</strong><span>FastAPI / 訊息迴圈</span></div><span class="arrow">↔</span>
+    <div class="node"><strong>Ollama</strong><span>Qwen3 4B Instruct</span></div>
+  </div>
+  <div class="tool-branch"><div class="connector">↕</div><strong>唯讀工具 ↔ SQLite 快照</strong><span>Agent 驗證參數，再執行查詢</span></div>
+  <div class="flow-notes"><p>網頁與模型服務皆綁定 localhost<br>執行期間不需要資料庫帳密</p><p>每次查詢最多 5 輪<br>介面即時顯示工具事件</p></div>
+  <div class="footer"><span>最終回答整段顯示；工具事件透過 NDJSON 傳遞</span><span class="num">04 / 09</span></div>
+  <aside class="slide-note" data-source="src/app.py；src/agent.py；src/tools.py；scripts/start.ps1">模型不直接存取資料庫。它回傳工具名稱與 JSON 參數，Python 決定是否允許執行，再透過固定 SQL 查 SQLite。role=tool 的結果加入訊息後，才交回模型產生回答。Ollama 的雲端功能已關閉。這裡沒有導入額外 agent 框架，目的是直接掌握訊息、工具和停止條件。</aside>
+</section>
+
+<section class="slide" data-title="一次工具呼叫的流程" aria-label="第5頁 一次工具呼叫的流程">
+  <h2>一次工具呼叫的流程</h2><p class="question">「比較 2330 和 2303 在指定期間的價格變化。」</p>
+  <div class="tool-demo">
+    <div><div class="code-label">模型回傳工具名稱與參數</div><pre><span class="accent">compare_stocks</span>({
+  "tickers": ["2330", "2303"],
+  "start_date": "2026-09-01",
+  "end_date": "2026-09-21"
+})</pre></div>
+    <ol class="steps"><li>驗證代號、日期與工具白名單</li><li>查出兩檔股票的共同交易日</li><li>用首尾收盤價計算價格變化</li><li>模型依工具結果整理回答</li></ol>
+  </div>
+  <p class="formula"><span class="accent">價格變動 %</span> =（期末收盤價 ÷ 期初收盤價 − 1）× 100</p>
+  <div class="footer"><span>價格還原方式未驗證；結果不代表含息總報酬</span><span class="num">05 / 09</span></div>
+  <aside class="slide-note" data-source="src/tools.py：compare_stocks；src/agent.py">共同交易日很重要，否則可能拿不同日期比較。開發時曾發現模型誤用最近五筆行情代表整個指定期間，因此對部分價格比較問句加入檢查：若沒有使用 compare_stocks，就要求修正。這項規則有明確的語句涵蓋範圍，不能宣稱所有問法都已驗證。</aside>
+</section>
+
+<section class="slide" data-title="執行限制與回答檢查" aria-label="第6頁 執行限制與回答檢查">
+  <h2>執行限制與回答檢查</h2><p class="lead">把可控的查詢規則放在程式中，保留核對依據。</p>
+  <div class="two content"><div class="rule"><h3>工具執行</h3><ul class="checks"><li><strong>4 個工具白名單</strong>，使用固定參數化 SQL</li><li>SQLite 以唯讀模式開啟</li><li>限制日期、筆數與工具呼叫輪數</li><li>一次只處理一個問題</li></ul></div>
+  <div class="rule"><h3>回答完整性</h3><ul class="checks"><li>期間比較需取得比較工具結果</li><li>新聞摘要需包含來源 ID</li><li>缺漏時要求模型修正，超限即停止</li><li>保留工具結果供人工核對</li></ul></div></div>
+  <p class="guard-note">這些檢查有助於攔截特定錯誤；來源正確性與摘要語意仍需核對。</p>
+  <div class="footer"><span>新聞視為不可信資料；提示詞約束不是完整的注入防護</span><span class="num">06 / 09</span></div>
+  <aside class="slide-note" data-source="src/tools.py；src/agent.py；tests/test_agent.py">將模型的自由度限制在工具選擇與文字整理。模型不能執行任意 SQL 或 shell 指令。新聞來源 ID 的檢查只確認是否附來源，不代表每個敘述都完全正確；參數化 SQL 也不等同於企業權限管理。正式環境仍要補登入、資料授權與稽核。</aside>
+</section>
+
+<section class="slide" data-title="筆電實測結果" aria-label="第7頁 筆電實測結果">
+  <h2>筆電實測結果</h2><p class="lead">Qwen3 4B Instruct · RTX 4070 Laptop · 8 GB VRAM</p>
+  <div class="results"><div><div class="bars" role="img" aria-label="四題總耗時：行情3.38秒、比較2.72秒、新聞4.44秒、資料不足2.21秒，橫軸0到5秒">
+    <div class="bar-row"><span>行情查詢</span><div class="bar-track"><div class="bar-fill" style="width:67.6%"></div></div><span class="bar-value">3.38 秒</span></div>
+    <div class="bar-row"><span>雙股比較</span><div class="bar-track"><div class="bar-fill" style="width:54.4%"></div></div><span class="bar-value">2.72 秒</span></div>
+    <div class="bar-row"><span>新聞摘要</span><div class="bar-track"><div class="bar-fill" style="width:88.8%"></div></div><span class="bar-value">4.44 秒</span></div>
+    <div class="bar-row"><span>資料不足</span><div class="bar-track"><div class="bar-fill" style="width:44.2%"></div></div><span class="bar-value">2.21 秒</span></div>
+    <div class="axis"><span>0</span><span>5 秒</span></div>
+  </div><p class="results-note">2026-09-22 單次暖機後觀察值<br>非平均值、P95 或多使用者負載結果</p></div>
+  <div><div class="metric"><strong>100%</strong><span>GPU 載入</span><p>模型約占 3.9 GB；上下文 8,192 tokens</p></div><div class="metric"><strong>28</strong><span>項自動測試通過</span><p>工具、日期計算、錯誤與迴圈控制</p></div><div class="metric"><strong>4</strong><span>個真模型案例</span><p>核對工具結果、回答與資料缺漏處理</p></div></div></div>
+  <div class="footer"><span>資料來源：本機測試紀錄；Ollama 0.34.2</span><span class="num">07 / 09</span></div>
+  <aside class="slide-note" data-source="docs/VALIDATION.md；docs/local-results/smoke-results.json">這是實際測得的最後一輪結果，模型已暖機。3.9 GB 是 Ollama 回報的模型載入量，不包含桌面與其他程式的顯存。使用的是 Q4_K_M 量化權重。測試包含模擬模型的單元測試，以及真模型 demo；仍不能把4個案例視為全面品質評估。服務停止後重新啟動也已驗證，尚未做整台 Windows 重啟與關閉網路介面的演練。</aside>
+</section>
+
+<section class="slide" data-title="現場展示" aria-label="第8頁 現場展示">
+  <h2>現場展示</h2><p class="lead">先看答案，再展開工具結果核對。</p>
+  <div class="demo-list"><div class="demo-item"><span class="index">01</span><h3>查行情</h3><div><p>「台積電最近五個交易日的收盤價？」</p><small>核對代號、五筆資料與截止日期</small></div></div>
+  <div class="demo-item"><span class="index">02</span><h3>比較價格</h3><div><p>「比較 2330 和 2303 的期間價格變化。」</p><small>查看共同交易日與程式計算結果</small></div></div>
+  <div class="demo-item"><span class="index">03</span><h3>資料不足</h3><div><p>「查詢 2330 在 2030-01-01 的收盤價。」</p><small>確認沒有拿其他日期代替</small></div></div></div>
+  <div class="demo-actions"><a class="primary" href="http://127.0.0.1:8765/" target="_blank" rel="noopener">開啟本機 Demo ↗</a><button id="copy-question" type="button">複製比較題目</button><span id="copy-status" class="status-message" aria-live="polite">先以 start-demo.cmd 啟動服務</span></div>
+  <div class="footer"><span>時間足夠時，再展示新聞摘要與來源完整性檢查</span><span class="num">08 / 09</span></div>
+  <aside class="slide-note" data-source="docs/DEMO.md；assets/app.js">可從這頁開啟已啟動的 demo。示範先跑查行情，再比較，最後展示資料不足。不要只講回答正確，請展開工具結果讓面試官看到模型實際使用的資料。若服務發生問題，本機 docs/local-results/demo-backup.html 保存先前實測結果；使用時明確說明是備援紀錄。回到投影片後按右鍵方向鍵繼續。</aside>
+</section>
+
+<section class="slide" data-title="目前範圍與後續擴充" aria-label="第9頁 目前範圍與後續擴充">
+  <h2>目前範圍與後續擴充</h2><p class="lead">保留工具介面，逐步擴充資料與部署能力。</p>
+  <table class="content roadmap"><thead><tr><th style="width:19%">面向</th><th style="width:39%">目前實作</th><th>後續方向</th></tr></thead><tbody>
+    <tr><td>資料</td><td>本機 SQLite 快照</td><td>PostgreSQL 查詢層與更新排程</td></tr>
+    <tr><td>檢索</td><td>新聞關鍵字與股票標籤</td><td>確認 embedding 模型，再接向量 RAG</td></tr>
+    <tr><td>品質</td><td>固定案例與有限規則檢查</td><td>擴充評估集，檢查摘要與引用語意</td></tr>
+    <tr><td>部署</td><td>單人、localhost、唯讀工具</td><td>登入、資料權限、稽核與負載測試</td></tr>
+  </tbody></table>
+  <p class="closing">這個專案驗證了本地推論與工具整合的完整流程。</p>
+  <div class="footer"><span>原始碼：github.com/zunmatched/ollama_test</span><span class="num">09 / 09</span></div>
+  <aside class="slide-note" data-source="README.md；docs/ARCHITECTURE.md；docs/VALIDATION.md">下一步先依需求決定資料新鮮度與權限，再決定是否改成連線式 PostgreSQL。原始新聞雖有1024維向量，但還沒確認使用的 embedding 模型，不能直接混用。正式多人服務也需要排隊、監控和容量規劃。這份 demo 沒有宣稱即時行情、模型微調或企業級部署已完成。</aside>
+</section>
+
+</div></div></main>
+<div id="progress" aria-hidden="true"></div>
+<nav id="toolbar" aria-label="投影片控制"><div class="group"><button id="prev" type="button" aria-label="上一頁">←</button><span id="counter" aria-live="polite">1 / 9</span><button id="next" type="button" aria-label="下一頁">→</button><span id="slide-label">地端股票資料助理</span></div><div class="group"><span class="shortcut-hint">← → 換頁</span><button id="overview-toggle" type="button" aria-expanded="false">目錄 G</button><button id="notes-toggle" type="button" aria-expanded="false">備註 N</button><button id="fullscreen" type="button">全螢幕 F</button></div></nav>
+<aside id="notes" hidden aria-label="講者備註"><h3 id="note-title">講者備註</h3><p id="note-text"></p><p id="note-source"></p></aside>
+<section id="overview" hidden aria-label="投影片目錄"><h2>投影片目錄</h2><div id="overview-grid"></div></section>
+<script>
+(() => {
+  const slides = [...document.querySelectorAll('.slide')];
+  const byId = id => document.getElementById(id);
+  let current = 0;
+  function resize() {
+    const viewport = byId('viewport');
+    const scale = Math.max(.12, Math.min((viewport.clientWidth - 36) / 1280, (viewport.clientHeight - 36) / 720));
+    byId('frame').style.width = `${1280 * scale}px`;
+    byId('frame').style.height = `${720 * scale}px`;
+    byId('deck').style.transform = `scale(${scale})`;
+  }
+  function show(index, writeHash = true) {
+    current = Math.max(0, Math.min(slides.length - 1, index));
+    slides.forEach((slide, i) => {slide.classList.toggle('active', i === current); slide.setAttribute('aria-hidden', String(i !== current)); slide.inert = i !== current;});
+    const slide = slides[current], note = slide.querySelector('.slide-note');
+    byId('counter').textContent = `${current + 1} / ${slides.length}`;
+    byId('slide-label').textContent = slide.dataset.title;
+    byId('note-title').textContent = `第 ${current + 1} 頁 · ${slide.dataset.title}`;
+    byId('note-text').textContent = note.textContent;
+    byId('note-source').textContent = `內容依據：${note.dataset.source}`;
+    byId('prev').disabled = current === 0; byId('next').disabled = current === slides.length - 1;
+    byId('progress').style.width = `${(current + 1) / slides.length * 100}%`;
+    [...byId('overview-grid').children].forEach((button,i) => button.setAttribute('aria-current', String(i === current)));
+    if(writeHash) history.replaceState(null, '', `#slide-${current + 1}`);
+  }
+  function toggleNotes() {
+    const open = byId('notes').hidden;
+    byId('notes').hidden = !open; document.body.classList.toggle('notes-open', open);
+    byId('notes-toggle').setAttribute('aria-expanded', String(open)); resize();
+  }
+  function toggleOverview(force) {
+    const open = typeof force === 'boolean' ? force : byId('overview').hidden;
+    byId('overview').hidden = !open; byId('overview-toggle').setAttribute('aria-expanded', String(open));
+    if(open) byId('overview-grid').children[current].focus();
+  }
+  async function fullscreen() {
+    try {if(document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen();}
+    catch { byId('fullscreen').textContent = '請使用 F11'; }
+  }
+  slides.forEach((slide,i) => {
+    const button = document.createElement('button'); button.type = 'button';
+    const number = document.createElement('span'); number.textContent = String(i + 1).padStart(2,'0');
+    button.append(number, document.createTextNode(slide.dataset.title));
+    button.addEventListener('click', () => {show(i); toggleOverview(false); byId('overview-toggle').focus();});
+    byId('overview-grid').append(button);
+  });
+  byId('prev').addEventListener('click', () => show(current - 1));
+  byId('next').addEventListener('click', () => show(current + 1));
+  byId('notes-toggle').addEventListener('click', toggleNotes);
+  byId('overview-toggle').addEventListener('click', () => toggleOverview());
+  byId('fullscreen').addEventListener('click', fullscreen);
+  document.addEventListener('keydown', event => {
+    if(event.ctrlKey || event.altKey || event.metaKey || /INPUT|TEXTAREA|SELECT/.test(event.target.tagName)) return;
+    if(event.key === 'Escape') {toggleOverview(false); return;}
+    if(!byId('overview').hidden && !['g','G'].includes(event.key)) return;
+    if(['ArrowRight','PageDown','ArrowLeft','PageUp','Home','End',' '].includes(event.key)) {
+      if(event.key === ' ' && /BUTTON|A/.test(event.target.tagName)) return;
+      event.preventDefault();
+      show(event.key === 'Home' ? 0 : event.key === 'End' ? slides.length - 1 : current + (['ArrowLeft','PageUp'].includes(event.key) ? -1 : 1));
+    } else if(event.key.toLowerCase() === 'n') toggleNotes();
+    else if(event.key.toLowerCase() === 'g') toggleOverview();
+    else if(event.key.toLowerCase() === 'f') fullscreen();
+  });
+  byId('copy-question').addEventListener('click', async () => {
+    const text = '比較 2330 和 2303 在 2026-09-01 至 2026-09-21 的價格變動百分比。';
+    try {await navigator.clipboard.writeText(text); byId('copy-status').textContent = '已複製，可貼到 Demo 問題欄';}
+    catch {byId('copy-status').textContent = '請使用 Demo 內的「比較價格」按鈕';}
+  });
+  window.addEventListener('resize', resize);
+  window.addEventListener('hashchange', () => {const match = location.hash.match(/^#slide-(\d+)$/); if(match) show(Number(match[1])-1,false);});
+  const initial = location.hash.match(/^#slide-(\d+)$/); show(initial ? Number(initial[1])-1 : 0); resize();
+})();
+</script>
+</body></html>
