@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.6-pg17-trixie
+    ports:
+      - "127.0.0.1:55432:5432"
+    environment:
+      POSTGRES_DB: stock_demo
+      POSTGRES_USER: stock_admin
+      POSTGRES_PASSWORD: ${STOCK_ADMIN_PASSWORD:?Run scripts/setup-postgres.py first}
+    volumes:
+      - stock_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stock_admin -d stock_demo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+volumes:
+  stock_pgdata:

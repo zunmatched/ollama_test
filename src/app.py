@@ -1,6 +1,7 @@
 import asyncio
 import json
 import sqlite3
+import os
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request
@@ -16,7 +17,11 @@ from src.tools import StockTools, ToolError
 app = FastAPI(title="Local Stock Lab", docs_url=None, redoc_url=None)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost"])
 app.mount("/static", StaticFiles(directory=ROOT / "assets"), name="static")
-tools = StockTools()
+if os.environ.get("STOCK_BACKEND", "sqlite") == "postgres":
+    from src.postgres_tools import PostgresTools
+    tools = PostgresTools(ROOT / ".runtime/postgres-reader.json")
+else:
+    tools = StockTools()
 agent_lock = asyncio.Lock()
 
 

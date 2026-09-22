@@ -8,6 +8,7 @@ async function refreshStatus() {
     const response = await fetch('/api/status');
     const data = await response.json();
     const snapshot = data.snapshot;
+    setText('database-backend', snapshot.database_backend || 'SQLite 快照');
     const ready = data.ollama.ready && !snapshot.error;
     setText('connection', ready ? '● 本機服務就緒' : '● 等待模型或資料');
     $('connection').className = 'connection' + (ready ? ' ready' : '');

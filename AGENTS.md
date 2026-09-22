@@ -2,7 +2,7 @@
 
 ## Project Status & Architecture
 
-This repository implements an offline-capable stock-data agent demonstration on a Windows laptop with an NVIDIA RTX 4070 Laptop GPU (8 GB VRAM). The stack is Ollama, Qwen3 4B, Python/FastAPI, and a plain HTML/CSS/JavaScript interface. PostgreSQL data is exported to a local SQLite snapshot before presentation.
+This repository implements an offline-capable stock-data agent demonstration on a Windows laptop with an NVIDIA RTX 4070 Laptop GPU (8 GB VRAM). The stack is Ollama, Qwen3 4B, Python/FastAPI, and plain HTML/CSS/JavaScript. Local PostgreSQL with pgvector imports the SQLite snapshot; SQLite remains a fallback. News retrieval still uses keywords until embeddings are verified. See `docs/POSTGRES.md` for WSL Docker deployment.
 
 ## Project Structure & Module Organization
 

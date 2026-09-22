@@ -4,12 +4,12 @@
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Local Stock Lab · 地端股票資料助理</title>
   <link rel="stylesheet" href="/static/style.css">
-  <script defer src="/static/app.js"></script>
+  <script defer src="/static/app.js?v=postgres-1"></script>
 </head>
 <body>
   <div class="shell">
     <header><a class="brand" href="/">◈ <span>LOCAL STOCK LAB</span></a><div class="header-right"><span class="badge">本機資料快照</span><span id="connection" class="connection">正在檢查服務</span></div></header>
-    <section class="intro"><div><div class="eyebrow">LOCAL INFERENCE · REAL DATA · VISIBLE TOOLS</div><h1>讓資料回答，<br><span>讓過程看得見。</span></h1><p>在筆電上查行情、比較價格、搜尋新聞。每次查詢都有來源，每個工具步驟都能檢視。</p></div><div class="architecture"><span>你的問題</span><b>↓</b><span>本機 LLM <small id="model">Qwen3 4B</small></span><b>↓</b><span>唯讀工具 <small>SQLite 快照</small></span></div></section>
+    <section class="intro"><div><div class="eyebrow">LOCAL INFERENCE · REAL DATA · VISIBLE TOOLS</div><h1>讓資料回答，<br><span>讓過程看得見。</span></h1><p>在筆電上查行情、比較價格、搜尋新聞。每次查詢都有來源，每個工具步驟都能檢視。</p></div><div class="architecture"><span>你的問題</span><b>↓</b><span>本機 LLM <small id="model">Qwen3 4B</small></span><b>↓</b><span>唯讀工具 <small id="database-backend">本機資料快照</small></span></div></section>
     <section class="stats"><div><small>行情截止日期</small><strong id="latest">—</strong></div><div><small>快照行情筆數</small><strong id="price-count">—</strong></div><div><small>新聞筆數</small><strong id="news-count">—</strong></div><div><small>模型載入狀態</small><strong id="gpu">尚未載入</strong></div></section>
     <main>
       <section class="workspace panel">

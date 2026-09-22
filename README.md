@@ -1,6 +1,8 @@
 # Local Stock Lab
 
-在 Windows 筆電上執行的股票資料 agent：**Ollama / Qwen3 4B + Python / FastAPI + 唯讀 SQLite 快照**。模型自主選擇工具；程式查資料、計算期間價格變化；網頁顯示回答與完整工具紀錄。
+在 Windows 筆電上執行的股票資料 agent：**Ollama / Qwen3 4B + Python / FastAPI + 本機 PostgreSQL / pgvector**，保留唯讀 SQLite 快照備援。模型自主選擇工具；程式查資料、計算期間價格變化；網頁顯示回答與完整工具紀錄。
+
+本機 PostgreSQL 部署與切換方式見 [部署指南](docs/POSTGRES.md)。pgvector 已啟用；新聞目前仍使用關鍵字查詢，尚未建立 embedding。
 
 ## 這台筆電直接開啟
 
