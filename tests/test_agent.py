@@ -11,6 +11,27 @@ def test_final_content_excludes_reasoning():
     assert final_content("<think>unfinished reasoning") == ""
 
 
+def test_missing_ticker_has_verified_explanation(stock_tools):
+    def no_model(request):
+        raise AssertionError("Missing snapshot ticker should not require inference")
+    events = collect(stock_tools, no_model, question="看一下這5天內0050的趨勢")
+    result = next(e for e in events if e["type"] == "tool_result")
+    assert result["arguments"] == {"keyword": "0050"}
+    assert not result["result"]["found"]
+    answer = next(e["text"] for e in events if e["type"] == "answer")
+    assert "未包含 0050" in answer
+    assert "2330" in answer
+    assert events[-1]["type"] == "done"
+
+
+def test_iso_date_is_not_a_missing_ticker(stock_tools):
+    events = collect(stock_tools, lambda request: httpx.Response(200, json={
+        "message": {"role": "assistant", "content": "", "tool_calls": [
+            {"function": {"name": "get_prices", "arguments": {"ticker": "2330", "start_date": "2030-01-01", "end_date": "2030-01-01"}}}]}}),
+        max_rounds=1, question="查詢2330在2030-01-01的收盤價")
+    assert next(e for e in events if e["type"] == "tool_result")["name"] == "get_prices"
+
+
 def collect(stock_tools, handler, max_rounds=5, question="查台積電"):
     async def run():
         async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:

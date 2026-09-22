@@ -1,4 +1,5 @@
 import json
+import re
 import time
 
 import httpx
@@ -22,6 +23,34 @@ async def run_agent(question: str, tools: StockTools, client: httpx.AsyncClient,
     started = time.perf_counter()
     metadata = tools.metadata()
     stock_names = ", ".join(f"{s['ticker']} {s['name']}" for s in metadata["stocks"])
+    # Recognize explicit numeric tickers without mistaking ISO dates for symbols.
+    # This is a deterministic data-availability check, not a model tool call.
+    requested = list(dict.fromkeys(re.findall(r"(?<![\w.\-])\d{4,6}(?![\w.\-])", question, flags=re.ASCII)))
+    available = {s["ticker"] for s in metadata["stocks"]}
+    missing = [ticker for ticker in requested if ticker not in available]
+    if missing and any(word in question for word in ("趨勢", "收盤", "價格", "行情", "漲跌", "股票", "比較")):
+        yield {"type": "start", "model": MODEL}
+        yield {"type": "status", "text": "程式先確認指定股票是否存在於本機快照"}
+        for ticker in missing:
+            args = {"keyword": ticker}
+            yield {"type": "tool_start", "name": "find_stocks", "arguments": args}
+            tick = time.perf_counter()
+            output = tools.execute("find_stocks", args)
+            yield {"type": "tool_result", "name": "find_stocks", "arguments": args,
+                   "result": output, "elapsed_ms": round((time.perf_counter() - tick) * 1000, 1)}
+            if "error" in output:
+                yield {"type": "error", "text": "股票資料查核失敗，請確認本機資料庫已啟動。"}
+                return
+        yield {"type": "answer", "text": (
+            f"本機快照未包含 {'、'.join(missing)}，因此無法回答這些標的的指定期間行情或趨勢。"
+            "這不代表該股票沒有交易資料，只是本次展示尚未匯入。\n\n"
+            f"目前可查：{stock_names}。\n"
+            "若要查詢上述缺少的標的，需要先匯入其歷史行情。\n"
+            f"來源：本機 stocks 清單；行情快照截止 {metadata.get('price_last_date', '未提供')}。"
+        )}
+        yield {"type": "done", "truncated": False, "elapsed_s": round(time.perf_counter() - started, 2),
+               "tool_calls": len(missing), "generated_tokens": 0, "generation_tokens_per_s": None}
+        return
     messages = [{"role": "system", "content": (
         "你是地端股票資料助理，以繁體中文簡潔回答。你只能用工具回傳的資料回答市場事實，"
         "不能憑記憶提供價格、新聞或計算結果。每次資料問題必須先呼叫工具。"
