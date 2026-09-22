@@ -5,3 +5,9 @@ __pycache__/
 .env.*
 !.env.example
 *.log
+.runtime/
+data/demo/*.sqlite*
+data/demo/*.json
+.pytest_cache/
+.ruff_cache/
+docs/local-results/

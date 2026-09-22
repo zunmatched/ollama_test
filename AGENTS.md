@@ -2,7 +2,7 @@
 
 ## Project Status & Architecture
 
-This workspace is intended for an offline-capable LLM agent demonstration on a Windows laptop with an NVIDIA RTX 4070 Laptop GPU (8 GB VRAM). The planned stack is Ollama, Qwen3 4B, Python, and a lightweight web interface. No application code, dependency manifest, test suite, or Git history exists yet. Treat the structure below as a convention for new development, not an inventory of implemented features.
+This repository implements an offline-capable stock-data agent demonstration on a Windows laptop with an NVIDIA RTX 4070 Laptop GPU (8 GB VRAM). The stack is Ollama, Qwen3 4B, Python/FastAPI, and a plain HTML/CSS/JavaScript interface. PostgreSQL data is exported to a local SQLite snapshot before presentation.
 
 ## Project Structure & Module Organization
 
@@ -11,6 +11,8 @@ This workspace is intended for an offline-capable LLM agent demonstration on a W
 - `data/demo/`: bounded snapshots of user-authorized stock data for reproducible offline demonstrations.
 - `assets/`: interface assets and demonstration screenshots.
 - `docs/`: setup instructions, architecture notes, and measured results.
+- `scripts/`: snapshot export, Windows startup, and real-model smoke checks.
+- `models/`: reproducible Ollama templates, never model weights.
 
 Keep downloaded models, virtual environments, credentials, and generated logs out of version control. Use paths relative to the project root rather than personal drive or network-share paths.
 
@@ -18,12 +20,15 @@ Keep downloaded models, virtual environments, credentials, and generated logs ou
 
 After installing Ollama, use:
 
-- `ollama pull qwen3:4b`: download the initial demonstration model; requires network access.
-- `ollama run qwen3:4b`: check interactive model responses.
+- `ollama pull qwen3:4b-instruct-2507-q4_K_M`: download the pinned demo model; requires network access.
+- `ollama create stock-agent:4b -f models/Modelfile`: create the demo alias with its compatible tool template.
 - `ollama ps`: inspect loaded models and processor allocation.
 - `nvidia-smi`: inspect GPU utilization and available VRAM.
 
-Application launch, dependency installation, and test commands are not configured. Document their exact commands when adding the corresponding files. Do not present proposed commands as working entry points.
+- `uv sync --frozen`: install locked dependencies.
+- `start-demo.cmd`: start local services and open the demo on Windows.
+- `uv run pytest -q`: run synthetic-data and mocked-model tests.
+- `uv run python scripts/smoke_demo.py`: check real-model flows and save private backup evidence.
 
 ## Coding Style & Naming Conventions
 
@@ -35,7 +40,7 @@ Use `pytest` for new Python tests, with files named `test_*.py`. Test tool valid
 
 ## Commit & Pull Request Guidelines
 
-There is no existing commit convention. Use concise, imperative subjects such as `Add read-only stock lookup tool`. Pull requests should explain behavior changes, validation performed, and relevant limitations. Include screenshots for interface changes and link issues when applicable.
+Use concise, imperative commit subjects, matching the initial `Add repository guidelines and local dependency exclusions` commit. Pull requests should explain behavior changes, validation performed, and relevant limitations. Include screenshots for interface changes and link issues when applicable.
 
 ## Security & Demo Constraints
 

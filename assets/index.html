@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local Stock Lab · 地端股票資料助理</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script defer src="/static/app.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <header><a class="brand" href="/">◈ <span>LOCAL STOCK LAB</span></a><div class="header-right"><span class="badge">本機資料快照</span><span id="connection" class="connection">正在檢查服務</span></div></header>
+    <section class="intro"><div><div class="eyebrow">LOCAL INFERENCE · REAL DATA · VISIBLE TOOLS</div><h1>讓資料回答，<br><span>讓過程看得見。</span></h1><p>在筆電上查行情、比較價格、搜尋新聞。每次查詢都有來源，每個工具步驟都能檢視。</p></div><div class="architecture"><span>你的問題</span><b>↓</b><span>本機 LLM <small id="model">Qwen3 4B</small></span><b>↓</b><span>唯讀工具 <small>SQLite 快照</small></span></div></section>
+    <section class="stats"><div><small>行情截止日期</small><strong id="latest">—</strong></div><div><small>快照行情筆數</small><strong id="price-count">—</strong></div><div><small>新聞筆數</small><strong id="news-count">—</strong></div><div><small>模型載入狀態</small><strong id="gpu">尚未載入</strong></div></section>
+    <main>
+      <section class="workspace panel">
+        <div class="section-label"><span>01 / ASK THE DATA</span><span>每題獨立查詢</span></div>
+        <h2>今天想查什麼？</h2><p class="muted">先選一個示範，或輸入你的問題。</p>
+        <div class="examples" id="examples"></div>
+        <form id="ask-form"><label class="sr-only" for="question">你的問題</label><textarea id="question" maxlength="1000" rows="3" placeholder="例如：台積電最近五個交易日的收盤價是多少？" required></textarea><div class="form-bottom"><span>所有查詢都在本機完成</span><button id="submit" type="submit">開始查詢 <span>↗</span></button></div></form>
+        <div class="answer-heading"><h3>查詢回答</h3><span id="status" aria-live="polite">準備就緒</span></div>
+        <div id="answer" class="answer empty" aria-live="polite">你的下一個問題，從資料開始。<small>模型回答將顯示在這裡；右側可檢視實際工具結果。</small></div>
+        <div id="metrics" class="metrics"></div>
+      </section>
+      <aside class="panel trace-panel"><div class="section-label"><span>02 / EXECUTION TRACE</span><span id="tool-count">0 次工具呼叫</span></div><h2>執行過程</h2><p class="muted">查看模型選了什麼工具，以及工具真正回傳的資料。</p><div id="trace" class="trace"><div class="trace-empty">尚未執行工具<br><small>不會顯示模型內部思考內容</small></div></div></aside>
+    </main>
+    <section class="data-strip"><strong>可查股票</strong><span id="stock-list">等待本機快照</span></section>
+    <footer><span>LOCAL STOCK LAB / INTERVIEW DEMO</span><span>歷史資料展示 · 非即時行情 · 新聞採關鍵字搜尋 · 非投資建議</span></footer>
+  </div>
+</body></html>

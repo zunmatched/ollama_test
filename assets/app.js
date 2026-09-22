@@ -1,0 +1,107 @@
+const $ = (id) => document.getElementById(id);
+let running = false;
+let toolCount = 0;
+function setText(id, text) { $(id).textContent = text; }
+
+async function refreshStatus() {
+  try {
+    const response = await fetch('/api/status');
+    const data = await response.json();
+    const snapshot = data.snapshot;
+    const ready = data.ollama.ready && !snapshot.error;
+    setText('connection', ready ? '● 本機服務就緒' : '● 等待模型或資料');
+    $('connection').className = 'connection' + (ready ? ' ready' : '');
+    setText('model', data.ollama.model === 'stock-agent:4b' ? 'Qwen3 4B Instruct' : data.ollama.model);
+    setText('latest', snapshot.price_last_date || '尚未匯入');
+    setText('price-count', (snapshot.price_rows || 0).toLocaleString());
+    setText('news-count', (snapshot.news_rows || 0).toLocaleString());
+    const model = data.ollama.loaded.find(m => m.name === data.ollama.model ||
+      (data.ollama.model === 'stock-agent:4b' && m.name === 'qwen3:4b-instruct-2507-q4_K_M'));
+    setText('gpu', model ? `${(model.size_vram / 1024 ** 3).toFixed(1)} GiB 顯存` : '首次查詢時載入');
+    setText('stock-list', snapshot.stocks ? snapshot.stocks.map(s => `${s.ticker} ${s.name}`).join(' ／ ') : snapshot.error);
+    if (!$('examples').children.length && snapshot.price_last_date) {
+      const end = snapshot.price_last_date;
+      const start = end.slice(0, 8) + '01';
+      const examples = [
+        ['查行情', '查詢台積電（2330）最近五個交易日的收盤價。'],
+        ['比較價格', `比較 2330 和 2303 在 ${start} 至 ${end} 的價格變動百分比。`],
+        ['找新聞', '搜尋「記憶體」最近三則新聞，整理重點並附來源日期。'],
+        ['資料不足', '查詢 2330 在 2030-01-01 的收盤價，只查這一天。'],
+      ];
+      for (const [label, question] of examples) {
+        const button = document.createElement('button');
+        button.type = 'button'; button.className = 'example'; button.textContent = label;
+        button.addEventListener('click', () => { if (!running) { $('question').value = question; $('question').focus(); } });
+        $('examples').append(button);
+      }
+    }
+  } catch { setText('connection', '● 無法連線本機服務'); }
+}
+
+function eventReceived(event) {
+  if (event.type === 'status') {
+    setText('status', event.text);
+    if (event.text.startsWith('檢查')) {
+      const note = document.createElement('div'); note.className = 'trace-note';
+      note.textContent = '✓ ' + event.text; $('trace').append(note);
+    }
+  }
+  if (event.type === 'tool_start') setText('status', `正在執行 ${event.name}`);
+  if (event.type === 'tool_result') {
+    toolCount++;
+    setText('tool-count', `${toolCount} 次工具呼叫`);
+    const card = document.createElement('details'); card.className = 'trace-card'; card.open = toolCount === 1;
+    const summary = document.createElement('summary');
+    summary.textContent = `${String(toolCount).padStart(2, '0')}  ${event.name} · ${event.elapsed_ms} ms`;
+    const pre = document.createElement('pre');
+    pre.textContent = JSON.stringify({arguments: event.arguments, result: event.result}, null, 2);
+    card.append(summary, pre);
+    for (const row of event.result.rows || []) {
+      if (!row.url) continue;
+      try {
+        const url = new URL(row.url);
+        if (!['http:', 'https:'].includes(url.protocol)) continue;
+        const link = document.createElement('a'); link.className = 'source-link';
+        link.href = url.href; link.target = '_blank'; link.rel = 'noopener noreferrer';
+        link.textContent = `↗ 原文（需網路）：${row.title || row.id}`;
+        card.append(link);
+      } catch { /* Invalid source URLs are displayed as text only in tool output. */ }
+    }
+    $('trace').append(card);
+  }
+  if (event.type === 'answer') { $('answer').className = 'answer'; setText('answer', event.text); }
+  if (event.type === 'done') {
+    setText('status', '查詢完成');
+    for (const text of [`總耗時 ${event.elapsed_s} 秒`, `${event.tool_calls} 次工具呼叫`, `生成速度 ${event.generation_tokens_per_s ?? '—'} tokens/s`]) {
+      const span = document.createElement('span'); span.className = 'metric'; span.textContent = text; $('metrics').append(span);
+    }
+  }
+  if (event.type === 'error') { $('answer').className = 'answer'; setText('answer', event.text); setText('status', '未完成'); }
+}
+
+$('ask-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const question = $('question').value.trim();
+  if (running || !question) return;
+  running = true; toolCount = 0;
+  $('submit').disabled = true;
+  $('trace').replaceChildren(); $('metrics').replaceChildren();
+  setText('tool-count', '0 次工具呼叫'); setText('answer', '正在查詢，首次載入模型可能需要稍候…');
+  $('answer').className = 'answer empty'; setText('status', '連線模型');
+  try {
+    const response = await fetch('/api/chat', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({question})});
+    if (!response.ok) { const body = await response.json(); throw new Error(typeof body.detail === 'string' ? body.detail : '請求失敗'); }
+    const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = '';
+    while (true) {
+      const {value, done} = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, {stream: true});
+      const lines = buffer.split('\n'); buffer = lines.pop();
+      for (const line of lines) if (line.trim()) eventReceived(JSON.parse(line));
+    }
+    buffer += decoder.decode();
+    if (buffer.trim()) eventReceived(JSON.parse(buffer));
+  } catch (error) { setText('answer', error.message || '連線失敗'); setText('status', '未完成'); }
+  finally { running = false; $('submit').disabled = false; refreshStatus(); }
+});
+refreshStatus();
