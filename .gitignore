@@ -10,4 +10,5 @@ data/demo/*.sqlite*
 data/demo/*.json
 .pytest_cache/
 .ruff_cache/
+*.egg-info/
 docs/local-results/

@@ -30,11 +30,11 @@
   <table class="content"><thead><tr><th style="width:21%">功能</th><th style="width:45%">使用者問題</th><th>執行方式</th></tr></thead><tbody>
     <tr><td>行情查詢</td><td>台積電最近五個交易日的收盤價？</td><td>依代號與日期查詢</td></tr>
     <tr><td>期間比較</td><td>比較兩檔股票的期間價格變化</td><td>對齊共同交易日，再計算</td></tr>
-    <tr><td>新聞整理</td><td>搜尋記憶體相關新聞並摘要</td><td>關鍵字檢索，附來源 ID</td></tr>
+    <tr><td>新聞整理</td><td>搜尋記憶體相關新聞並摘要</td><td>關鍵字／向量／圖譜查詢，附來源 ID</td></tr>
     <tr><td>資料不足</td><td>查詢快照範圍以外的日期</td><td>回報缺漏，不替換日期</td></tr>
   </tbody></table>
   <div class="footer"><span>每題獨立對話；歷史快照資料</span><span class="num">02 / 09</span></div>
-  <aside class="slide-note" data-source="src/tools.py；src/agent.py">四個使用情境都透過同一套 agent loop 執行。除了這些功能，還有 find_stocks 可以把股票名稱轉成代號。新聞目前是關鍵字與股票標籤篩選；不要將它介紹為向量 RAG。介面保留工具名稱、參數、結果與耗時，方便核對。</aside>
+  <aside class="slide-note" data-source="src/tools.py；src/agent.py；docs/GRAPHRAG.md">四個使用情境都透過同一套 agent loop 執行。除了這些功能，還有 find_stocks 可以把股票名稱轉成代號。新增的新聞圖譜及向量索引只覆蓋最新 30 則；其他新聞仍可關鍵字搜尋。介面保留工具名稱、參數、結果與耗時，方便核對。</aside>
 </section>
 
 <section class="slide" data-title="展示資料範圍" aria-label="第3頁 展示資料範圍">
@@ -42,8 +42,8 @@
   <div class="two content"><div class="rule"><h3>可查股票</h3><p class="body">2002 中鋼　2303 聯電<br>2330 台積電　2337 旺宏<br>2344 華邦電　2408 南亞科<br>2454 聯發科　8046 南電</p></div>
   <div class="rule"><h3>資料內容</h3><p class="body">989 筆歷史行情<br>300 則新聞<br>行情截止 2026-09-21</p></div></div>
   <p class="guard-note">例如 0050 尚未匯入。系統會先查核標的，再清楚回報資料缺漏。</p>
-  <div class="footer"><span>本機 PostgreSQL + pgvector；新聞目前使用關鍵字查詢</span><span class="num">03 / 09</span></div>
-  <aside class="slide-note" data-source="scripts/setup-postgres.py；scripts/verify_postgres.py；src/agent.py">這頁交代 demo 的資料範圍，避免將有限快照誤認為全市場或即時資料。使用者詢問不存在的 0050 時，程式會用 find_stocks 查核後明確回覆尚未匯入，而不是讓模型猜測。資料庫部署在本機 PostgreSQL 17，pgvector 已啟用，但新聞還沒有可驗證的 embedding，所以仍採關鍵字搜尋。</aside>
+  <div class="footer"><span>本機 PostgreSQL + pgvector；30 則新聞已建立向量索引</span><span class="num">03 / 09</span></div>
+  <aside class="slide-note" data-source="scripts/setup-postgres.py；scripts/verify_postgres.py；docs/GRAPHRAG.md">這頁交代 demo 的資料範圍，避免將有限快照誤認為全市場或即時資料。使用者詢問不存在的 0050 時，程式會用 find_stocks 查核後明確回覆尚未匯入。資料庫部署在本機 PostgreSQL 17；最新 30 則新聞已建立向量索引，其中 8 則有通過原文檢查的圖譜關係。</aside>
 </section>
 
 <section class="slide" data-title="系統架構" aria-label="第4頁 系統架構">
@@ -111,13 +111,13 @@
   <h2>目前範圍與後續擴充</h2><p class="lead">保留工具介面，逐步擴充資料與部署能力。</p>
   <table class="content roadmap"><thead><tr><th style="width:19%">面向</th><th style="width:39%">目前實作</th><th>後續方向</th></tr></thead><tbody>
     <tr><td>資料</td><td>本機 PostgreSQL + pgvector</td><td>資料更新排程與快照版本管理</td></tr>
-    <tr><td>檢索</td><td>pgvector 已啟用；檢索仍採關鍵字</td><td>確認 embedding 模型，再接向量 RAG</td></tr>
+    <tr><td>檢索</td><td>關鍵字＋30 則向量＋新聞圖譜</td><td>擴大索引，改善實體合併與多跳查詢</td></tr>
     <tr><td>品質</td><td>固定案例與有限規則檢查</td><td>擴充評估集，檢查摘要與引用語意</td></tr>
     <tr><td>部署</td><td>單人、localhost、唯讀工具</td><td>登入、資料權限、稽核與負載測試</td></tr>
   </tbody></table>
   <p class="closing">這個專案驗證了本地推論與工具整合的完整流程。</p>
   <div class="footer"><span>原始碼：github.com/zunmatched/ollama_test</span><span class="num">09 / 09</span></div>
-  <aside class="slide-note" data-source="README.md；docs/POSTGRES.md">本機 PostgreSQL 資料層已完成；下一步依需求補資料更新排程、資料新鮮度與權限管理。原始新聞雖有1024維向量，但還沒確認使用的 embedding 模型，不能直接混用。正式多人服務也需要排隊、監控和容量規劃。這份 demo 沒有宣稱即時行情、模型微調或企業級部署已完成。</aside>
+  <aside class="slide-note" data-source="README.md；docs/POSTGRES.md；docs/GRAPHRAG.md">本機 PostgreSQL 資料層已完成。向量使用明確的本機 qwen3-embedding:0.6b 模型；原始資料庫來源不明的向量沒有混用。新聞圖譜目前只查直接關係，模型抽取仍需核對語意。正式多人服務還需要資料更新、權限管理、監控和容量規劃。</aside>
 </section>
 
 </div></div></main>

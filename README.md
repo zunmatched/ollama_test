@@ -2,7 +2,7 @@
 
 在 Windows 筆電上執行的股票資料 agent：**Ollama / Qwen3.5 4B + Python / FastAPI + 本機 PostgreSQL / pgvector**，保留唯讀 SQLite 快照備援。模型自主選擇工具；程式查資料、計算期間價格變化；網頁顯示回答與完整工具紀錄。
 
-本機 PostgreSQL 部署與切換方式見 [部署指南](docs/POSTGRES.md)。pgvector 已啟用；新聞目前仍使用關鍵字查詢，尚未建立 embedding。
+本機 PostgreSQL 部署與切換方式見 [部署指南](docs/POSTGRES.md)。新聞可使用關鍵字、實體關係及本機向量查詢；建立與更新索引見 [GraphRAG 指南](docs/GRAPHRAG.md)。
 
 ## 這台筆電直接開啟
 
@@ -26,8 +26,10 @@
 | `get_prices` | 日期範圍內最近 1–30 筆行情 |
 | `compare_stocks` | 2–4 檔股票共同交易日期間的價格變化 |
 | `search_news` | 關鍵字、股票標籤篩選及來源引用 |
+| `search_news_graph` | 查詢新聞抽取的實體關係與逐字原文證據；需本機 PostgreSQL |
+| `search_news_semantic` | 以本機 1024 維向量搜尋語意相近新聞；需本機 PostgreSQL |
 
-新聞目前是**關鍵字檢索**，不是向量搜尋。原資料庫的 1,024 維向量尚未確認所用 embedding 模型，因此不混用。價格還原方式與成交量單位尚未驗證；比較結果不是含息總報酬。此專案展示歷史資料查詢，不提供買賣建議。
+GraphRAG 索引目前只覆蓋最新 30 則新聞；其中 8 則有通過原文證據檢查的關係，另有 30 則的本機向量。原資料庫來源不明的 1,024 維向量沒有混用。圖譜關係由模型抽取，仍需人工檢查語意；價格還原方式與成交量單位尚未驗證。此專案展示歷史資料查詢，不提供買賣建議。
 
 ## 從新環境安裝
 
@@ -37,6 +39,7 @@
 uv sync --frozen
 ollama pull qwen3.5:4b
 ollama pull qwen3:4b-instruct-2507-q4_K_M
+ollama pull qwen3-embedding:0.6b
 ollama create stock-agent:4b -f models/Modelfile
 ```
 

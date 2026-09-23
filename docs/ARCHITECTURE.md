@@ -8,7 +8,10 @@ flowchart LR
     PG[(PostgreSQL)] -->|唯讀交易／範圍限制| Export[Python 匯出器]
     Registry[官方模型來源] --> Ollama[Ollama / Qwen3.5 4B]
   end
-  Export --> DB[(本機 SQLite 快照)]
+  Export --> Snapshot[(本機 SQLite 快照)]
+  Snapshot --> DB[(本機 PostgreSQL / pgvector)]
+  Ollama -->|離線索引| Graph[新聞實體與關係]
+  Graph --> DB
   subgraph 現場執行_本機
     UI[瀏覽器介面] --> API[FastAPI]
     API --> Loop[Agent loop]
@@ -22,7 +25,7 @@ flowchart LR
   end
 ```
 
-瀏覽器使用 `127.0.0.1:8765`；Ollama 使用 `127.0.0.1:11434`。執行期間不需要 PostgreSQL 帳密。前端沒有 CDN、外部字型或分析追蹤；點擊新聞原文才需要外網。
+瀏覽器使用 `127.0.0.1:8765`；Ollama 使用 `127.0.0.1:11434`。本機 PostgreSQL 查詢帳密只保存在忽略的 `.runtime`，SQLite 可作備援。前端沒有 CDN、外部字型或分析追蹤；點擊新聞原文才需要外網。
 
 ## 一個問題如何完成
 
@@ -41,9 +44,9 @@ flowchart LR
 ## 選型理由
 
 - **4B 量化模型：** 在 8 GB 顯存筆電保留上下文與桌面顯存空間；實測後再考慮 8B。
-- **SQLite 快照：** 讓現場展示不依賴家中網路，日期和資料量可重現。
+- **本機 PostgreSQL：** 將行情、新聞、向量和圖譜放在同一資料庫；SQLite 快照保留備援。
 - **固定工具 SQL：** 讓輸入驗證、權限和計算結果容易測試；不開放任意 text-to-SQL。
-- **關鍵字新聞檢索：** 在未知既有 embedding 模型時先保留可解釋的基準。尚未實作向量檢索或 reranking。
+- **新聞檢索：** 保留關鍵字基準，另以固定本機模型建立向量，並由新聞原文抽取一跳實體關係。尚未實作 reranking 或多跳推理。
 - **簡單 agent loop：** 直接展示訊息、工具與停止條件；沒有額外框架抽象。
 
 ## 評估界線

@@ -3,6 +3,9 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
 Set-Location -LiteralPath $projectRoot
 $pythonPath = Join-Path $projectRoot '.venv\Scripts\python.exe'
+if (Test-Path -LiteralPath (Join-Path $projectRoot '.runtime\venv\Scripts\python.exe')) {
+    $pythonPath = Join-Path $projectRoot '.runtime\venv\Scripts\python.exe'
+}
 if (-not (Test-Path -LiteralPath $pythonPath)) { throw 'Run uv sync first.' }
 $runtimePath = Join-Path $projectRoot '.runtime'
 New-Item -ItemType Directory -Force -Path $runtimePath | Out-Null

@@ -90,6 +90,7 @@ async function refreshStatus() {
     setText('latest', snapshot.price_last_date || '尚未匯入');
     setText('price-count', (snapshot.price_rows || 0).toLocaleString());
     setText('news-count', (snapshot.news_rows || 0).toLocaleString());
+    setText('graph-count', `${snapshot.graph_news_rows || 0} 則有關係證據／${snapshot.graph_processed_rows || 0} 則已處理`);
     const model = data.ollama.loaded.find(m => m.name === data.ollama.model ||
       (data.ollama.model === 'stock-agent:4b' && m.name === 'qwen3:4b-instruct-2507-q4_K_M'));
     setText('gpu', model ? `${(model.size_vram / 1024 ** 3).toFixed(1)} GiB 顯存` : '首次查詢時載入');
@@ -101,6 +102,7 @@ async function refreshStatus() {
         ['查行情', '查詢台積電（2330）最近五個交易日的收盤價。'],
         ['比較價格', `比較 2330 和 2303 在 ${start} 至 ${end} 的價格變動百分比。`],
         ['找新聞', '搜尋「記憶體」最近三則新聞，整理重點並附來源日期。'],
+        ['新聞關聯', '聯發科最近有哪些新聞事件？請查新聞圖譜並附原文證據。'],
         ['資料不足', '查詢 2330 在 2030-01-01 的收盤價，只查這一天。'],
       ];
       for (const [label, question] of examples) {

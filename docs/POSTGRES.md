@@ -29,6 +29,6 @@ uv run python scripts/smoke_demo.py
 
 查詢帳號只有 SELECT 權限，預設唯讀交易；程式也強制唯讀、5 秒查詢限制與固定參數化 SQL。容器只發布在本機 loopback。
 
-pgvector 已啟用並通過餘弦距離運算測試。`news_embeddings` 預留新聞 ID、模型識別、內容 hash 與向量欄位，目前是空表，**新聞仍使用關鍵字查詢，尚未啟用語意搜尋**。需先選定並驗證本地 embedding 模型，再以同一模型建立文章與問題向量；不能直接混用來源不明的 1,024 維向量。
+pgvector 已啟用並通過餘弦距離運算測試。`news_embeddings` 使用本機 `qwen3-embedding:0.6b` 建立文章向量，問題也使用同一模型。新聞圖譜與索引建立方式見 [GraphRAG 指南](GRAPHRAG.md)。不能混用來源不明的 1,024 維向量。
 
 本次匯入 8 檔股票、989 筆行情與 300 則新聞。9 組 SQLite/PostgreSQL 查詢結果一致，並驗證查詢帳號即使要求讀寫交易也無法 DELETE。未完成整機重新開機與關閉網卡演練。HTML 簡報已同步本機 PostgreSQL 架構與此次四個真模型案例的量測，並標示向量檢索尚未啟用。
