@@ -1,4 +1,4 @@
-param([switch]$NoBrowser, [ValidateSet('auto','sqlite','postgres')][string]$Backend = 'auto')
+param([switch]$NoBrowser, [ValidateSet('auto','sqlite','postgres')][string]$Backend = 'auto', [ValidateSet('qwen3.5:4b','stock-agent:4b')][string]$Model = 'qwen3.5:4b')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
 Set-Location -LiteralPath $projectRoot
@@ -27,7 +27,7 @@ $env:OLLAMA_HOST = '127.0.0.1:11434'
 $env:OLLAMA_NO_CLOUD = '1'
 $env:OLLAMA_NUM_PARALLEL = '1'
 $env:OLLAMA_MODELS = Join-Path $runtimePath 'models'
-$env:OLLAMA_MODEL = 'stock-agent:4b'
+$env:OLLAMA_MODEL = $Model
 $ollamaPath = Join-Path $runtimePath 'ollama\ollama.exe'
 if (-not (Test-Path -LiteralPath $ollamaPath)) {
     $installed = Get-Command ollama -ErrorAction SilentlyContinue
@@ -45,12 +45,12 @@ catch {
     if (-not $ready) { throw 'Ollama failed to start; inspect .runtime/ollama-error.log.' }
 }
 $models = Invoke-RestMethod 'http://127.0.0.1:11434/api/tags' -TimeoutSec 5
-if ($models.models.name -notcontains $env:OLLAMA_MODEL) { throw 'Run ollama create stock-agent:4b -f models/Modelfile first (see README).' }
+if ($models.models.name -notcontains $env:OLLAMA_MODEL) { throw "Model $env:OLLAMA_MODEL is missing. See README.md for download instructions." }
 try { $webStatus = Invoke-RestMethod 'http://127.0.0.1:8765/api/status' -TimeoutSec 5; $webReady = $true } catch { $webReady = $false }
 if ($webReady) {
     $activeBackend = if ($webStatus.snapshot.database_backend -eq 'PostgreSQL + pgvector') { 'postgres' } else { 'sqlite' }
-    if ($activeBackend -ne $Backend) {
-        if ($webStatus.busy) { throw 'A query is running. Finish it before switching databases.' }
+    if ($activeBackend -ne $Backend -or $webStatus.ollama.model -ne $Model) {
+        if ($webStatus.busy) { throw 'A query is running. Finish it before switching database or model.' }
         $listener = Get-NetTCPConnection -LocalPort 8765 -State Listen
         $webProcess = Get-CimInstance Win32_Process -Filter "ProcessId = $($listener.OwningProcess)"
         if ($webProcess.CommandLine -notmatch 'uvicorn.*src\.app:app') { throw 'Port 8765 belongs to another service; not stopping it.' }

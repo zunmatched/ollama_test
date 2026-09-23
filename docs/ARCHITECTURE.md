@@ -6,7 +6,7 @@
 flowchart LR
   subgraph 準備階段_需要網路
     PG[(PostgreSQL)] -->|唯讀交易／範圍限制| Export[Python 匯出器]
-    Registry[官方模型來源] --> Ollama[Ollama / Qwen3 4B]
+    Registry[官方模型來源] --> Ollama[Ollama / Qwen3.5 4B]
   end
   Export --> DB[(本機 SQLite 快照)]
   subgraph 現場執行_本機
@@ -34,7 +34,7 @@ flowchart LR
 
 對含「比較」及價格等關鍵字的問題，檢查是否已使用期間比較工具；對新聞檢查來源 ID，缺漏時要求補齊。這是有限的規則檢查，不是通用事實驗證。
 
-本機別名 `stock-agent:4b` 使用 Qwen3 4B Instruct 2507 Q4_K_M 權重及 `models/Modelfile` 的 Go 工具模板，以避開本次 Ollama 原生解析器對新聞文字的解析問題；未做模型微調。
+預設使用 Qwen3.5 4B Q4_K_M。Qwen3 備援別名 `stock-agent:4b` 使用 Qwen3 4B Instruct 2507 Q4_K_M 權重及 `models/Modelfile` 的 Go 工具模板；未做模型微調。
 
 網頁透過 NDJSON 接收執行事件。這是每輪工具狀態的串流，模型回答目前在該輪產生完畢後一次顯示，不是逐 token 串流。
 

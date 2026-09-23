@@ -1,6 +1,6 @@
 # Local Stock Lab
 
-在 Windows 筆電上執行的股票資料 agent：**Ollama / Qwen3 4B + Python / FastAPI + 本機 PostgreSQL / pgvector**，保留唯讀 SQLite 快照備援。模型自主選擇工具；程式查資料、計算期間價格變化；網頁顯示回答與完整工具紀錄。
+在 Windows 筆電上執行的股票資料 agent：**Ollama / Qwen3.5 4B + Python / FastAPI + 本機 PostgreSQL / pgvector**，保留唯讀 SQLite 快照備援。模型自主選擇工具；程式查資料、計算期間價格變化；網頁顯示回答與完整工具紀錄。
 
 本機 PostgreSQL 部署與切換方式見 [部署指南](docs/POSTGRES.md)。pgvector 已啟用；新聞目前仍使用關鍵字查詢，尚未建立 embedding。
 
@@ -8,7 +8,7 @@
 
 雙擊根目錄的 **`start-demo.cmd`**，然後開啟 <http://127.0.0.1:8765>。
 
-首次模型載入較慢。上台前先跑一次「查行情」，保留服務執行並接上電源。每題都是獨立對話，不沿用上一題內容。
+預設使用 Qwen3.5 4B（Q4_K_M）；首次模型載入較慢。上台前先跑一次「查行情」，保留服務執行並接上電源。每題都是獨立對話，不沿用上一題內容。需要切回已驗證的 Qwen3 4B Instruct 時，執行 `powershell -File scripts/start.ps1 -Model stock-agent:4b`。
 
 模型、Python 套件、資料快照下載完成後，查詢路徑只使用 loopback 與本機檔案。新聞原文連結需要網路。完整斷網與重新開機演練請依 [展示指南](docs/DEMO.md) 操作。
 
@@ -35,15 +35,16 @@
 
 ```powershell
 uv sync --frozen
+ollama pull qwen3.5:4b
 ollama pull qwen3:4b-instruct-2507-q4_K_M
 ollama create stock-agent:4b -f models/Modelfile
 ```
 
 Ollama Windows 安裝版通常會自動啟動；沒有啟動時執行 `ollama serve`。
-Demo 使用 `stock-agent:4b` 本機別名，權重來自 `qwen3:4b-instruct-2507-q4_K_M`。
-`models/Modelfile` 固定工具模板，避開本次測得的原生解析器問題；沒有微調或更改模型權重。
+預設 Demo 使用 `qwen3.5:4b`。原先已驗證的 `stock-agent:4b` 保留為 Qwen3 備援。
+`models/Modelfile` 固定 Qwen3 備援的工具模板；沒有微調或更改模型權重。
 這台準備用筆電採可攜版，位置為 `.runtime/ollama/ollama.exe`，模型存於 `.runtime/models`。
-若手動啟動可攜版：
+若手動啟動可攜版，預設載入 Qwen3.5 4B：
 
 ```powershell
 $env:OLLAMA_HOST = '127.0.0.1:11434'

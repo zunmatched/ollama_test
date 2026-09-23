@@ -12,7 +12,8 @@ async function refreshStatus() {
     const ready = data.ollama.ready && !snapshot.error;
     setText('connection', ready ? '● 本機服務就緒' : '● 等待模型或資料');
     $('connection').className = 'connection' + (ready ? ' ready' : '');
-    setText('model', data.ollama.model === 'stock-agent:4b' ? 'Qwen3 4B Instruct' : data.ollama.model);
+    const modelNames = { 'stock-agent:4b': 'Qwen3 4B Instruct', 'qwen3.5:4b': 'Qwen3.5 4B' };
+    setText('model', modelNames[data.ollama.model] || data.ollama.model);
     setText('latest', snapshot.price_last_date || '尚未匯入');
     setText('price-count', (snapshot.price_rows || 0).toLocaleString());
     setText('news-count', (snapshot.news_rows || 0).toLocaleString());

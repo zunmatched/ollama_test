@@ -35,7 +35,7 @@
 
 ## 故障備援
 
-- **模型未就緒：** 查看 `.runtime/ollama-error.log`，確認 `stock-agent:4b` 已依 README 建立。
+- **模型未就緒：** 查看 `.runtime/ollama-error.log`，確認 `qwen3.5:4b` 已依 README 下載。若要切回備援，執行 `scripts/start.ps1 -Model stock-agent:4b`。
 - **網頁無法開啟：** 重跑啟動器，查看 `.runtime/web-error.log`。
 - **推論很慢：** 先檢查電源與顯存；不要現場換模型。第一次載入時間不等於暖機後速度。
 - **回答不準：** 展開工具結果核對，承認模型輸出限制，改用較具體的問法。
