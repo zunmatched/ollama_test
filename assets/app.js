@@ -3,6 +3,79 @@ let running = false;
 let toolCount = 0;
 function setText(id, text) { $(id).textContent = text; }
 
+// Render the model's Markdown using DOM nodes only; model output is never treated as HTML.
+function renderInline(text, parent) {
+  const pattern = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*(.+?)\*\*|__(.+?)__|`([^`]+)`|\*(?!\s)(.+?)(?<!\s)\*|_(?!\s)(.+?)(?<!\s)_/g;
+  let start = 0;
+  for (const match of text.matchAll(pattern)) {
+    parent.append(document.createTextNode(text.slice(start, match.index)));
+    let node;
+    if (match[1] !== undefined) {
+      node = document.createElement('a'); node.href = match[2];
+      node.target = '_blank'; node.rel = 'noopener noreferrer';
+      node.textContent = match[1];
+    } else if (match[3] !== undefined || match[4] !== undefined) {
+      node = document.createElement('strong'); node.textContent = match[3] ?? match[4];
+    } else if (match[5] !== undefined) {
+      node = document.createElement('code'); node.textContent = match[5];
+    } else {
+      node = document.createElement('em'); node.textContent = match[6] ?? match[7];
+    }
+    parent.append(node);
+    start = match.index + match[0].length;
+  }
+  parent.append(document.createTextNode(text.slice(start)));
+}
+
+function renderMarkdown(target, markdown) {
+  target.replaceChildren();
+  const lines = String(markdown).replace(/\r\n?/g, '\n').split('\n');
+  let paragraph = [], list = null, listIndent = 0, code = null;
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    const p = document.createElement('p');
+    paragraph.forEach((line, index) => {
+      if (index) p.append(document.createElement('br'));
+      renderInline(line, p);
+    });
+    target.append(p); paragraph = [];
+  };
+  const flushList = () => { if (list) target.append(list); list = null; };
+  for (const line of lines) {
+    if (code) {
+      if (/^\s*```/.test(line)) { target.append(code); code = null; }
+      else code.firstChild.textContent += (code.firstChild.textContent ? '\n' : '') + line;
+      continue;
+    }
+    if (/^\s*```/.test(line)) {
+      flushParagraph(); flushList();
+      code = document.createElement('pre');
+      const codeNode = document.createElement('code'); code.append(codeNode);
+      continue;
+    }
+    if (!line.trim()) { flushParagraph(); flushList(); continue; }
+    const heading = line.match(/^\s*(#{1,3})\s+(.+?)\s*#*\s*$/);
+    if (heading) {
+      flushParagraph(); flushList();
+      const node = document.createElement(`h${heading[1].length}`);
+      renderInline(heading[2], node); target.append(node); continue;
+    }
+    const item = line.match(/^(\s*)([-+*]|\d+[.)])\s+(.+)$/);
+    if (item) {
+      flushParagraph();
+      const type = /^\d/.test(item[2]) ? 'ol' : 'ul';
+      if (!list || list.tagName.toLowerCase() !== type) { flushList(); list = document.createElement(type); }
+      const li = document.createElement('li');
+      listIndent = Math.min(3, Math.floor(item[1].length / 2));
+      if (listIndent) li.style.marginLeft = `${listIndent * 1.2}rem`;
+      renderInline(item[3], li); list.append(li); continue;
+    }
+    flushList(); paragraph.push(line);
+  }
+  flushParagraph(); flushList();
+  if (code) target.append(code);
+}
+
 async function refreshStatus() {
   try {
     const response = await fetch('/api/status');
@@ -71,7 +144,7 @@ function eventReceived(event) {
     }
     $('trace').append(card);
   }
-  if (event.type === 'answer') { $('answer').className = 'answer'; setText('answer', event.text); }
+  if (event.type === 'answer') { $('answer').className = 'answer'; renderMarkdown($('answer'), event.text); }
   if (event.type === 'done') {
     setText('status', '查詢完成');
     for (const text of [`總耗時 ${event.elapsed_s} 秒`, `${event.tool_calls} 次工具呼叫`, `生成速度 ${event.generation_tokens_per_s ?? '—'} tokens/s`]) {
