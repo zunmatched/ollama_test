@@ -34,16 +34,16 @@
     <tr><td>資料不足</td><td>查詢快照範圍以外的日期</td><td>回報缺漏，不替換日期</td></tr>
   </tbody></table>
   <div class="footer"><span>每題獨立對話；歷史快照資料</span><span class="num">02 / 09</span></div>
-  <aside class="slide-note" data-source="src/tools.py；src/agent.py；docs/GRAPHRAG.md">新聞問句不一定使用圖譜。詢問公司與事件關係時，系統提示模型優先使用 search_news_graph；一般新聞問題仍可能使用關鍵字或向量搜尋。新增索引只覆蓋最新 30 則，其他新聞仍可關鍵字搜尋。介面顯示實際工具名稱、參數、結果與耗時。</aside>
+  <aside class="slide-note" data-source="src/tools.py；src/agent.py；docs/GRAPHRAG.md">新聞問句不一定使用圖譜。詢問公司與事件關係時，系統提示模型優先使用 search_news_graph；一般新聞問題仍可能使用關鍵字或向量搜尋。向量涵蓋全部 300 則新聞；圖譜只處理最新 30 則。介面顯示實際工具名稱、參數、結果與耗時。</aside>
 </section>
 
 <section class="slide" data-title="展示資料範圍" aria-label="第3頁 展示資料範圍">
   <h2>展示資料範圍</h2><p class="lead">這份 Demo 使用有限的本機市場資料快照。</p>
   <div class="two content"><div class="rule"><h3>可查股票</h3><p class="body">2002 中鋼　2303 聯電<br>2330 台積電　2337 旺宏<br>2344 華邦電　2408 南亞科<br>2454 聯發科　8046 南電</p></div>
-  <div class="rule"><h3>資料內容</h3><p class="body">989 筆歷史行情<br>300 則新聞；30 則有向量<br>8 則有圖譜關係證據</p></div></div>
+  <div class="rule"><h3>資料內容</h3><p class="body">989 筆歷史行情<br>300 則新聞；全數有向量<br>8 則有圖譜關係證據</p></div></div>
   <p class="guard-note">例如 0050 尚未匯入。系統會先查核標的，再清楚回報資料缺漏。</p>
-  <div class="footer"><span>行情截止 2026-09-21；新聞索引只涵蓋部分快照</span><span class="num">03 / 09</span></div>
-  <aside class="slide-note" data-source="scripts/setup-postgres.py；scripts/verify_postgres.py；docs/GRAPHRAG.md">這頁交代 demo 的資料範圍，避免將有限快照誤認為全市場或即時資料。使用者詢問不存在的 0050 時，程式會用 find_stocks 查核後明確回覆尚未匯入。資料庫部署在本機 PostgreSQL 17；最新 30 則新聞已建立向量索引，其中 8 則有通過原文檢查的圖譜關係。</aside>
+  <div class="footer"><span>行情截止 2026-09-21；圖譜仍只涵蓋部分快照</span><span class="num">03 / 09</span></div>
+  <aside class="slide-note" data-source="scripts/setup-postgres.py；scripts/verify_postgres.py；docs/GRAPHRAG.md">這頁交代 demo 的資料範圍，避免將有限快照誤認為全市場或即時資料。使用者詢問不存在的 0050 時，程式會用 find_stocks 查核後明確回覆尚未匯入。資料庫部署在本機 PostgreSQL 17；300 則新聞全部建立向量，最新 30 則經過圖譜抽取，其中 8 則有通過原文檢查的關係。</aside>
 </section>
 
 <section class="slide" data-title="系統架構" aria-label="第4頁 系統架構">
@@ -68,7 +68,7 @@
 })</pre></div>
     <ol class="steps"><li>本機模型預先抽取新聞關係</li><li>PostgreSQL 保存實體與原文證據</li><li>工具查詢直接關係及新聞 ID</li><li>模型依查詢結果回答並附來源</li></ol>
   </div>
-  <p class="formula">實測：<span class="accent">30 則向量索引</span>；8 則產出 31 條原文證據</p>
+  <p class="formula">實測：<span class="accent">300 則向量索引</span>；8 則產出 31 條原文證據</p>
   <div class="footer"><span>關係問句優先查圖譜；其他新聞問句可能改用關鍵字或向量</span><span class="num">05 / 09</span></div>
   <aside class="slide-note" data-source="docs/GRAPHRAG.md；src/agent.py；src/postgres_tools.py">這是已實測成功的問句，模型呼叫 search_news_graph 兩次，最後附新聞 ID 與日期，總耗時 12.08 秒。新聞抽取時會驗證引用片段確實出現在原文，仍需人工判斷關係解讀是否正確。圖譜目前只查直接關係；沒有命中時可改用關鍵字搜尋。模型會自行選擇工具，不保證每個新聞問題都走圖譜。</aside>
 </section>
@@ -110,7 +110,7 @@
   <h2>目前範圍與後續擴充</h2><p class="lead">保留工具介面，逐步擴充資料與部署能力。</p>
   <table class="content roadmap"><thead><tr><th style="width:19%">面向</th><th style="width:39%">目前實作</th><th>後續方向</th></tr></thead><tbody>
     <tr><td>資料</td><td>本機 PostgreSQL + pgvector</td><td>資料更新排程與快照版本管理</td></tr>
-    <tr><td>檢索</td><td>關鍵字＋30 則向量＋新聞圖譜</td><td>擴大索引，改善實體合併與多跳查詢</td></tr>
+    <tr><td>檢索</td><td>關鍵字＋300 則向量＋新聞圖譜</td><td>擴大圖譜，改善實體合併與多跳查詢</td></tr>
     <tr><td>品質</td><td>固定案例與有限規則檢查</td><td>擴充評估集，檢查摘要與引用語意</td></tr>
     <tr><td>部署</td><td>單人、localhost、唯讀工具</td><td>登入、資料權限、稽核與負載測試</td></tr>
   </tbody></table>

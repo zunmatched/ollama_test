@@ -34,7 +34,8 @@ class PostgresTools(StockTools):
     def metadata(self) -> dict:
         result = super().metadata()
         result["database_backend"] = "PostgreSQL + pgvector"
-        result["vector_search_enabled"] = bool(self.query("SELECT EXISTS(SELECT 1 FROM news_embeddings) AS enabled")[0]["enabled"])
+        result["embedding_news_rows"] = self.query("SELECT COUNT(*) AS total FROM news_embeddings WHERE model=?", ("qwen3-embedding:0.6b",))[0]["total"]
+        result["vector_search_enabled"] = result["embedding_news_rows"] > 0
         try:
             result["graph_news_rows"] = self.query("SELECT COUNT(DISTINCT news_id) AS total FROM graph_evidence")[0]["total"]
             result["graph_processed_rows"] = self.query("SELECT COUNT(*) AS total FROM graph_processed_news WHERE status='complete'")[0]["total"]

@@ -90,6 +90,7 @@ async function refreshStatus() {
     setText('latest', snapshot.price_last_date || '尚未匯入');
     setText('price-count', (snapshot.price_rows || 0).toLocaleString());
     setText('news-count', (snapshot.news_rows || 0).toLocaleString());
+    setText('embedding-count', `${snapshot.embedding_news_rows || 0}／${snapshot.news_rows || 0} 則新聞`);
     setText('graph-count', `${snapshot.graph_news_rows || 0} 則有關係證據／${snapshot.graph_processed_rows || 0} 則已處理`);
     const model = data.ollama.loaded.find(m => m.name === data.ollama.model ||
       (data.ollama.model === 'stock-agent:4b' && m.name === 'qwen3:4b-instruct-2507-q4_K_M'));

@@ -2,7 +2,7 @@
 
 ## Project Status & Architecture
 
-This repository implements an offline-capable stock-data agent demonstration on a Windows laptop with an NVIDIA RTX 4070 Laptop GPU (8 GB VRAM). The stack is Ollama, Qwen3 4B, Python/FastAPI, and plain HTML/CSS/JavaScript. Local PostgreSQL with pgvector imports the SQLite snapshot; SQLite remains a fallback. News retrieval still uses keywords until embeddings are verified. See `docs/POSTGRES.md` for WSL Docker deployment.
+This repository implements an offline-capable stock-data agent demonstration on a Windows laptop with an NVIDIA RTX 4070 Laptop GPU (8 GB VRAM). The stack is Ollama, Qwen3.5 4B, Python/FastAPI, and plain HTML/CSS/JavaScript. Local PostgreSQL with pgvector imports the SQLite snapshot; SQLite remains a fallback. News supports keyword and local vector search across 300 articles; the evidence-backed graph covers a smaller subset. See `docs/POSTGRES.md` and `docs/GRAPHRAG.md`.
 
 ## Project Structure & Module Organization
 
