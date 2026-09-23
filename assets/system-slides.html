@@ -30,19 +30,19 @@
   <table class="content"><thead><tr><th style="width:21%">功能</th><th style="width:45%">使用者問題</th><th>執行方式</th></tr></thead><tbody>
     <tr><td>行情查詢</td><td>台積電最近五個交易日的收盤價？</td><td>依代號與日期查詢</td></tr>
     <tr><td>期間比較</td><td>比較兩檔股票的期間價格變化</td><td>對齊共同交易日，再計算</td></tr>
-    <tr><td>新聞整理</td><td>搜尋記憶體相關新聞並摘要</td><td>關鍵字／向量／圖譜查詢，附來源 ID</td></tr>
+    <tr><td>新聞整理</td><td>聯發科有哪些相關新聞事件？</td><td>模型選檢索工具，附新聞 ID</td></tr>
     <tr><td>資料不足</td><td>查詢快照範圍以外的日期</td><td>回報缺漏，不替換日期</td></tr>
   </tbody></table>
   <div class="footer"><span>每題獨立對話；歷史快照資料</span><span class="num">02 / 09</span></div>
-  <aside class="slide-note" data-source="src/tools.py；src/agent.py；docs/GRAPHRAG.md">四個使用情境都透過同一套 agent loop 執行。除了這些功能，還有 find_stocks 可以把股票名稱轉成代號。新增的新聞圖譜及向量索引只覆蓋最新 30 則；其他新聞仍可關鍵字搜尋。介面保留工具名稱、參數、結果與耗時，方便核對。</aside>
+  <aside class="slide-note" data-source="src/tools.py；src/agent.py；docs/GRAPHRAG.md">新聞問句不一定使用圖譜。詢問公司與事件關係時，系統提示模型優先使用 search_news_graph；一般新聞問題仍可能使用關鍵字或向量搜尋。新增索引只覆蓋最新 30 則，其他新聞仍可關鍵字搜尋。介面顯示實際工具名稱、參數、結果與耗時。</aside>
 </section>
 
 <section class="slide" data-title="展示資料範圍" aria-label="第3頁 展示資料範圍">
   <h2>展示資料範圍</h2><p class="lead">這份 Demo 使用有限的本機市場資料快照。</p>
   <div class="two content"><div class="rule"><h3>可查股票</h3><p class="body">2002 中鋼　2303 聯電<br>2330 台積電　2337 旺宏<br>2344 華邦電　2408 南亞科<br>2454 聯發科　8046 南電</p></div>
-  <div class="rule"><h3>資料內容</h3><p class="body">989 筆歷史行情<br>300 則新聞<br>行情截止 2026-09-21</p></div></div>
+  <div class="rule"><h3>資料內容</h3><p class="body">989 筆歷史行情<br>300 則新聞；30 則有向量<br>8 則有圖譜關係證據</p></div></div>
   <p class="guard-note">例如 0050 尚未匯入。系統會先查核標的，再清楚回報資料缺漏。</p>
-  <div class="footer"><span>本機 PostgreSQL + pgvector；30 則新聞已建立向量索引</span><span class="num">03 / 09</span></div>
+  <div class="footer"><span>行情截止 2026-09-21；新聞索引只涵蓋部分快照</span><span class="num">03 / 09</span></div>
   <aside class="slide-note" data-source="scripts/setup-postgres.py；scripts/verify_postgres.py；docs/GRAPHRAG.md">這頁交代 demo 的資料範圍，避免將有限快照誤認為全市場或即時資料。使用者詢問不存在的 0050 時，程式會用 find_stocks 查核後明確回覆尚未匯入。資料庫部署在本機 PostgreSQL 17；最新 30 則新聞已建立向量索引，其中 8 則有通過原文檢查的圖譜關係。</aside>
 </section>
 
@@ -53,30 +53,29 @@
     <div class="node"><strong>Python Agent</strong><span>FastAPI / 訊息迴圈</span></div><span class="arrow">↔</span>
     <div class="node"><strong>Ollama</strong><span>Qwen3.5 4B · Q4_K_M</span></div>
   </div>
-  <div class="tool-branch"><div class="connector">↕</div><strong>唯讀工具 ↔ PostgreSQL</strong><span>Agent 驗證參數，再執行查詢</span></div>
+  <div class="tool-branch"><div class="connector">↕</div><strong>唯讀工具 ↔ PostgreSQL</strong><span>行情、新聞、向量與圖譜查詢</span></div>
   <div class="flow-notes"><p>網頁與模型服務皆綁定 localhost<br>程式使用本機唯讀資料庫帳號</p><p>每次查詢最多 5 輪<br>介面即時顯示工具事件</p></div>
   <div class="footer"><span>最終回答整段顯示；工具事件透過 NDJSON 傳遞</span><span class="num">04 / 09</span></div>
-  <aside class="slide-note" data-source="src/app.py；src/agent.py；src/postgres_tools.py；scripts/start.ps1">模型不直接存取資料庫。它回傳工具名稱與 JSON 參數，Python 決定是否允許執行，再透過固定 SQL 查本機 PostgreSQL。role=tool 的結果加入訊息後，才交回模型產生回答。Ollama 的雲端功能已關閉。這裡沒有導入額外 agent 框架，目的是直接掌握訊息、工具和停止條件。</aside>
+  <aside class="slide-note" data-source="src/app.py；src/agent.py；src/postgres_tools.py；scripts/start.ps1">模型不直接存取資料庫。它回傳工具名稱與 JSON 參數，Python 決定是否允許執行，再透過固定 SQL 查本機 PostgreSQL。新聞圖譜和向量索引在展示前離線建立，查詢時使用唯讀帳號。role=tool 的結果加入訊息後，才交回模型產生回答。Ollama 的雲端功能已關閉。</aside>
 </section>
 
-<section class="slide" data-title="一次工具呼叫的流程" aria-label="第5頁 一次工具呼叫的流程">
-  <h2>一次工具呼叫的流程</h2><p class="question">「比較 2330 和 2303 在指定期間的價格變化。」</p>
+<section class="slide" data-title="新聞 GraphRAG 流程" aria-label="第5頁 新聞 GraphRAG 流程">
+  <h2>新聞 GraphRAG 流程</h2><p class="question">「聯發科最近有哪些新聞事件？」</p>
   <div class="tool-demo">
-    <div><div class="code-label">模型回傳工具名稱與參數</div><pre><span class="accent">compare_stocks</span>({
-  "tickers": ["2330", "2303"],
-  "start_date": "2026-09-01",
-  "end_date": "2026-09-21"
+    <div><div class="code-label">模型選擇圖譜工具</div><pre><span class="accent">search_news_graph</span>({
+  "keyword": "聯發科",
+  "limit": 5
 })</pre></div>
-    <ol class="steps"><li>驗證代號、日期與工具白名單</li><li>查出兩檔股票的共同交易日</li><li>用首尾收盤價計算價格變化</li><li>模型依工具結果整理回答</li></ol>
+    <ol class="steps"><li>本機模型預先抽取新聞關係</li><li>PostgreSQL 保存實體與原文證據</li><li>工具查詢直接關係及新聞 ID</li><li>模型依查詢結果回答並附來源</li></ol>
   </div>
-  <p class="formula"><span class="accent">價格變動 %</span> =（期末收盤價 ÷ 期初收盤價 − 1）× 100</p>
-  <div class="footer"><span>價格還原方式未驗證；結果不代表含息總報酬</span><span class="num">05 / 09</span></div>
-  <aside class="slide-note" data-source="src/tools.py：compare_stocks；src/agent.py">共同交易日很重要，否則可能拿不同日期比較。開發時曾發現模型誤用最近五筆行情代表整個指定期間，因此對部分價格比較問句加入檢查：若沒有使用 compare_stocks，就要求修正。這項規則有明確的語句涵蓋範圍，不能宣稱所有問法都已驗證。</aside>
+  <p class="formula">實測：<span class="accent">30 則向量索引</span>；8 則產出 31 條原文證據</p>
+  <div class="footer"><span>關係問句優先查圖譜；其他新聞問句可能改用關鍵字或向量</span><span class="num">05 / 09</span></div>
+  <aside class="slide-note" data-source="docs/GRAPHRAG.md；src/agent.py；src/postgres_tools.py">這是已實測成功的問句，模型呼叫 search_news_graph 兩次，最後附新聞 ID 與日期，總耗時 12.08 秒。新聞抽取時會驗證引用片段確實出現在原文，仍需人工判斷關係解讀是否正確。圖譜目前只查直接關係；沒有命中時可改用關鍵字搜尋。模型會自行選擇工具，不保證每個新聞問題都走圖譜。</aside>
 </section>
 
 <section class="slide" data-title="執行限制與回答檢查" aria-label="第6頁 執行限制與回答檢查">
   <h2>執行限制與回答檢查</h2><p class="lead">把可控的查詢規則放在程式中，保留核對依據。</p>
-  <div class="two content"><div class="rule"><h3>工具執行</h3><ul class="checks"><li><strong>4 個工具白名單</strong>，使用固定參數化 SQL</li><li>PostgreSQL 唯讀帳號與交易</li><li>限制日期、筆數與工具呼叫輪數</li><li>一次只處理一個問題</li></ul></div>
+  <div class="two content"><div class="rule"><h3>工具執行</h3><ul class="checks"><li><strong>6 個工具白名單</strong>，使用固定查詢</li><li>PostgreSQL 唯讀帳號與交易</li><li>限制日期、筆數與工具呼叫輪數</li><li>一次只處理一個問題</li></ul></div>
   <div class="rule"><h3>回答完整性</h3><ul class="checks"><li>期間比較需取得比較工具結果</li><li>新聞摘要需包含來源 ID</li><li>缺漏時要求模型修正，超限即停止</li><li>保留工具結果供人工核對</li></ul></div></div>
   <p class="guard-note">這些檢查有助於攔截特定錯誤；來源正確性與摘要語意仍需核對。</p>
   <div class="footer"><span>新聞視為不可信資料；提示詞約束不是完整的注入防護</span><span class="num">06 / 09</span></div>
@@ -92,19 +91,19 @@
     <div class="bar-row"><span>資料不足</span><div class="bar-track"><div class="bar-fill" style="width:40%"></div></div><span class="bar-value">3.20 秒</span></div>
     <div class="axis"><span>0</span><span>8 秒</span></div>
   </div><p class="results-note">2026-09-23 PostgreSQL 單次觀察值<br>非平均值、P95 或多使用者負載結果</p></div>
-  <div><div class="metric"><strong>100%</strong><span>GPU 載入</span><p>模型載入約 3.3 GB；上下文 8,192 tokens</p></div><div class="metric"><strong>30</strong><span>項自動測試通過</span><p>工具、日期計算、錯誤與迴圈控制</p></div><div class="metric"><strong>4</strong><span>個真模型案例</span><p>行情、比較、新聞與資料不足皆呼叫預期工具</p></div></div></div>
+  <div><div class="metric"><strong>100%</strong><span>GPU 載入</span><p>模型載入約 3.3 GB；上下文 8,192 tokens</p></div><div class="metric"><strong>33</strong><span>項自動測試通過</span><p>含新聞關係的原文證據驗證</p></div><div class="metric"><strong>12.08</strong><span>秒</span><p>另一次圖譜問答實測，呼叫 2 次圖譜工具</p></div></div></div>
   <div class="footer"><span>資料來源：本機測試紀錄；Ollama 0.34.2</span><span class="num">07 / 09</span></div>
-  <aside class="slide-note" data-source="docs/VALIDATION.md；docs/local-results/smoke-results.json">新版模型四個案例共17.26秒，舊版同四例約17.08秒，總耗時相近；新聞案例由舊版4.54秒變為新版6.20秒。這些都是單次觀察值，不代表穩定效能或品質排名。兩個版本的四例都使用預期工具；新聞摘要仍需要人工核對內容。Qwen3.5 模型檔約3.4 GB，載入時 Ollama 顯示全部位於 GPU。30項自動測試驗證工具與 agent 程式邏輯，不等於測試模型回答正確率。</aside>
+  <aside class="slide-note" data-source="docs/VALIDATION.md；docs/GRAPHRAG.md；tests/test_news_graph.py">圖中四個案例是加入圖譜前的單次量測，圖譜案例 12.08 秒是另一次實測，不能直接作平均或性能比較。所有數字不代表穩定效能或品質排名。Qwen3.5 模型檔約3.4 GB，載入時 Ollama 顯示全部位於 GPU。33 項自動測試驗證程式邏輯，不等於測試模型回答正確率。</aside>
 </section>
 
 <section class="slide" data-title="現場展示" aria-label="第8頁 現場展示">
   <h2>現場展示</h2><p class="lead">先看答案，再展開工具結果核對。</p>
   <div class="demo-list"><div class="demo-item"><span class="index">01</span><h3>查行情</h3><div><p>「台積電最近五個交易日的收盤價？」</p><small>核對代號、五筆資料與截止日期</small></div></div>
   <div class="demo-item"><span class="index">02</span><h3>比較價格</h3><div><p>「比較 2330 和 2303 的期間價格變化。」</p><small>查看共同交易日與程式計算結果</small></div></div>
-  <div class="demo-item"><span class="index">03</span><h3>資料不足</h3><div><p>「查詢 2330 在 2030-01-01 的收盤價。」</p><small>確認沒有拿其他日期代替</small></div></div></div>
-  <div class="demo-actions"><a class="primary" href="http://127.0.0.1:8765/" target="_blank" rel="noopener">開啟本機 Demo ↗</a><button id="copy-question" type="button">複製比較題目</button><span id="copy-status" class="status-message" aria-live="polite">先以 start-demo.cmd 啟動服務</span></div>
-  <div class="footer"><span>時間足夠時，再展示新聞摘要與來源完整性檢查</span><span class="num">08 / 09</span></div>
-  <aside class="slide-note" data-source="docs/DEMO.md；assets/app.js">可從這頁開啟已啟動的 demo。示範先跑查行情，再比較，最後展示資料不足。不要只講回答正確，請展開工具結果讓面試官看到模型實際使用的資料。若服務發生問題，本機 docs/local-results/demo-backup.html 保存先前實測結果；使用時明確說明是備援紀錄。回到投影片後按右鍵方向鍵繼續。</aside>
+  <div class="demo-item"><span class="index">03</span><h3>新聞關聯</h3><div><p>「聯發科最近有哪些新聞事件？」</p><small>查看 search_news_graph 與原文證據</small></div></div></div>
+  <div class="demo-actions"><a class="primary" href="http://127.0.0.1:8765/" target="_blank" rel="noopener">開啟本機 Demo ↗</a><button id="copy-question" type="button">複製圖譜題目</button><span id="copy-status" class="status-message" aria-live="polite">先以 start-demo.cmd 啟動服務</span></div>
+  <div class="footer"><span>圖譜只涵蓋部分新聞；現場以右側工具紀錄確認實際路徑</span><span class="num">08 / 09</span></div>
+  <aside class="slide-note" data-source="docs/DEMO.md；assets/app.js；docs/GRAPHRAG.md">可從這頁開啟已啟動的 demo。示範先跑查行情，再比較，最後問新聞關聯並展開工具紀錄。圖譜提問使用實測成功的聯發科案例；如果模型改選其他工具，應依現場紀錄如實說明。資料不足案例仍可作為備用展示。若服務發生問題，本機 docs/local-results/demo-backup.html 保存先前實測結果；使用時明確說明是備援紀錄。</aside>
 </section>
 
 <section class="slide" data-title="目前範圍與後續擴充" aria-label="第9頁 目前範圍與後續擴充">
@@ -190,9 +189,9 @@
     else if(event.key.toLowerCase() === 'f') fullscreen();
   });
   byId('copy-question').addEventListener('click', async () => {
-    const text = '比較 2330 和 2303 在 2026-09-01 至 2026-09-21 的價格變動百分比。';
+    const text = '聯發科最近有哪些新聞事件？請查新聞圖譜並附原文證據。';
     try {await navigator.clipboard.writeText(text); byId('copy-status').textContent = '已複製，可貼到 Demo 問題欄';}
-    catch {byId('copy-status').textContent = '請使用 Demo 內的「比較價格」按鈕';}
+    catch {byId('copy-status').textContent = '請使用 Demo 內的「新聞關聯」按鈕';}
   });
   window.addEventListener('resize', resize);
   window.addEventListener('hashchange', () => {const match = location.hash.match(/^#slide-(\d+)$/); if(match) show(Number(match[1])-1,false);});
