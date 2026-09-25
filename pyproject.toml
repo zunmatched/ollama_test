@@ -8,6 +8,8 @@ dependencies = [
   "uvicorn>=0.34,<1",
   "httpx>=0.28,<1",
   "pg8000>=1.31,<2",
+  "langgraph>=1.2.12",
+  "langchain-ollama>=1.1.0",
 ]
 
 [dependency-groups]

@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from src.agent import run_agent
+from src.langgraph_agent import run_graph_agent
 from src.config import MODEL, OLLAMA_URL, ROOT
 from src.tools import StockTools, ToolError
 
@@ -23,6 +24,9 @@ if os.environ.get("STOCK_BACKEND", "sqlite") == "postgres":
 else:
     tools = StockTools()
 agent_lock = asyncio.Lock()
+ENGINE = os.environ.get("STOCK_AGENT_ENGINE", "classic")
+if ENGINE not in ("classic", "langgraph"):
+    raise ValueError("STOCK_AGENT_ENGINE must be classic or langgraph")
 
 
 @app.get("/")
@@ -46,7 +50,7 @@ async def status():
                                   "size_vram": m.get("size_vram")} for m in ps.get("models", [])]
     except (httpx.HTTPError, ValueError, KeyError):
         ollama["error"] = "Ollama 尚未啟動或模型尚未下載。"
-    return {"snapshot": snapshot, "ollama": ollama, "busy": agent_lock.locked()}
+    return {"snapshot": snapshot, "ollama": ollama, "busy": agent_lock.locked(), "agent_engine": ENGINE}
 
 
 class Question(BaseModel):
@@ -66,9 +70,13 @@ async def chat(body: Question, request: Request):
 
     async def events():
         try:
-            async with httpx.AsyncClient(timeout=180, trust_env=False) as client:
-                async for event in run_agent(body.question.strip(), tools, client):
+            if ENGINE == "langgraph":
+                async for event in run_graph_agent(body.question.strip(), tools):
                     yield json.dumps(event, ensure_ascii=False) + "\n"
+            else:
+                async with httpx.AsyncClient(timeout=180, trust_env=False) as client:
+                    async for event in run_agent(body.question.strip(), tools, client):
+                        yield json.dumps(event, ensure_ascii=False) + "\n"
         except httpx.HTTPError:
             yield json.dumps({"type": "error", "text": "模型連線失敗或逾時。請確認 Ollama 已啟動並下載模型。"}, ensure_ascii=False) + "\n"
         except Exception:

@@ -1,4 +1,4 @@
-param([switch]$NoBrowser, [ValidateSet('auto','sqlite','postgres')][string]$Backend = 'auto', [ValidateSet('qwen3.5:4b','stock-agent:4b')][string]$Model = 'qwen3.5:4b')
+param([switch]$NoBrowser, [ValidateSet('auto','sqlite','postgres')][string]$Backend = 'auto', [ValidateSet('qwen3.5:4b','stock-agent:4b')][string]$Model = 'qwen3.5:4b', [ValidateSet('classic','langgraph')][string]$Engine = 'classic')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
 Set-Location -LiteralPath $projectRoot
@@ -13,6 +13,7 @@ if ($Backend -eq 'auto') {
     if (Test-Path -LiteralPath "$runtimePath\postgres-reader.json") { $Backend = 'postgres' } else { $Backend = 'sqlite' }
 }
 $env:STOCK_BACKEND = $Backend
+$env:STOCK_AGENT_ENGINE = $Engine
 if ($Backend -eq 'postgres') {
     if (-not (Test-Path -LiteralPath "$runtimePath\postgres-reader.json")) { throw 'Run scripts/setup-postgres.py --wsl first.' }
     $keeperPath = Join-Path $runtimePath 'wsl-keeper.pid'
@@ -52,12 +53,14 @@ if ($models.models.name -notcontains $env:OLLAMA_MODEL) { throw "Model $env:OLLA
 try { $webStatus = Invoke-RestMethod 'http://127.0.0.1:8765/api/status' -TimeoutSec 5; $webReady = $true } catch { $webReady = $false }
 if ($webReady) {
     $activeBackend = if ($webStatus.snapshot.database_backend -eq 'PostgreSQL + pgvector') { 'postgres' } else { 'sqlite' }
-    if ($activeBackend -ne $Backend -or $webStatus.ollama.model -ne $Model) {
+    if ($activeBackend -ne $Backend -or $webStatus.ollama.model -ne $Model -or $webStatus.agent_engine -ne $Engine) {
         if ($webStatus.busy) { throw 'A query is running. Finish it before switching database or model.' }
-        $listener = Get-NetTCPConnection -LocalPort 8765 -State Listen
-        $webProcess = Get-CimInstance Win32_Process -Filter "ProcessId = $($listener.OwningProcess)"
-        if ($webProcess.CommandLine -notmatch 'uvicorn.*src\.app:app') { throw 'Port 8765 belongs to another service; not stopping it.' }
-        Stop-Process -Id $listener.OwningProcess
+        $listener = Get-NetTCPConnection -LocalPort 8765 -State Listen | Select-Object -First 1
+        if (-not $listener) { throw 'The web service changed while checking its port; rerun the starter.' }
+        $webPid = [int]$listener.OwningProcess
+        $webProcess = Get-CimInstance Win32_Process -Filter "ProcessId = $webPid"
+        if (-not $webProcess -or $webProcess.CommandLine -notmatch 'uvicorn.*src\.app:app') { throw 'Port 8765 belongs to another service; not stopping it.' }
+        [System.Diagnostics.Process]::GetProcessById($webPid).Kill()
         $webReady = $false
     }
 }

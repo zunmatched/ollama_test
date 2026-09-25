@@ -4,6 +4,8 @@
 
 本機 PostgreSQL 部署與切換方式見 [部署指南](docs/POSTGRES.md)。新聞可使用關鍵字、實體關係及本機向量查詢；建立與更新索引見 [GraphRAG 指南](docs/GRAPHRAG.md)。
 
+另提供可切換的 LangGraph 執行路徑，沿用相同唯讀工具與資料來源。執行 `powershell -File scripts/start.ps1 -Engine langgraph`，再於 `/api/status` 確認 `agent_engine`。節點流程、限制與面試展示方式見 [LangGraph 指南](docs/LANGGRAPH.md)。預設仍為原有的 classic 模式。
+
 ## 這台筆電直接開啟
 
 雙擊根目錄的 **`start-demo.cmd`**，然後開啟 <http://127.0.0.1:8765>。
@@ -86,7 +88,7 @@ uv run python scripts/smoke_demo.py
 ## 結構
 
 ```text
-src/             agent loop、唯讀工具、FastAPI 服務
+src/             classic / LangGraph agent、唯讀工具、FastAPI 服務
 assets/          無 CDN 依賴的 HTML / CSS / JavaScript
 scripts/         啟動、快照匯出、真模型驗證
 models/          可重建的 Ollama 提示模板，不含權重
