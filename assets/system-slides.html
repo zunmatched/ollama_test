@@ -20,9 +20,9 @@
   <p class="kicker">LOCAL STOCK LAB</p><div class="edition">系統介紹<br>2026.09</div>
   <h1>地端股票<br><span class="accent">資料助理</span></h1>
   <p class="subtitle">在筆電上執行模型，<br>透過唯讀工具查詢資料並整理回答。</p>
-  <div class="stack"><span>Ollama / Qwen3.5 4B</span><span>Python / FastAPI</span><span>PostgreSQL + pgvector</span></div>
+  <div class="stack"><span>Ollama / Qwen3.5 4B</span><span>LangGraph / FastAPI</span><span>PostgreSQL + pgvector</span></div>
   <div class="footer"><span>個人部署與工具呼叫實作</span><span class="num">01 / 09</span></div>
-  <aside class="slide-note" data-source="README.md；docs/ARCHITECTURE.md">這個專案以我自己的股票資料為例，驗證在一般筆電上部署 LLM 並整合工具的完整流程。模型負責選擇工具與說明，查詢與數字計算由 Python 完成。這是個人實作驗證，企業上線經驗可以另外介紹。整份約5–7分鐘，現場 demo 另留2分鐘。</aside>
+  <aside class="slide-note" data-source="README.md；docs/LANGGRAPH.md">這個專案以我自己的股票資料為例，驗證在一般筆電上部署 LLM 並整合工具的完整流程。LangGraph 是可切換的執行路徑，預設啟動仍是 classic；現場先在 /api/status 確認 agent_engine。模型負責選擇工具與說明，查詢與數字計算由 Python 完成。整份約5–7分鐘，現場 demo 另留2分鐘。</aside>
 </section>
 
 <section class="slide" data-title="系統功能" aria-label="第2頁 系統功能">
@@ -47,16 +47,16 @@
 </section>
 
 <section class="slide" data-title="系統架構" aria-label="第4頁 系統架構">
-  <h2>系統架構</h2><p class="lead">模型選工具，程式執行查詢，再把結果交回模型。</p>
-  <div class="flow" role="img" aria-label="網頁介面經由 Python Agent 呼叫 Ollama，Agent 驗證並執行 PostgreSQL 工具；查詢結果回到模型，再回傳回答至介面">
+  <h2>系統架構</h2><p class="lead">LangGraph 明確串起模型、唯讀工具與回答驗證節點。</p>
+  <div class="flow" role="img" aria-label="網頁介面經由 LangGraph Agent 呼叫 Ollama，Agent 驗證並執行 PostgreSQL 工具；查詢結果回到模型，再經驗證節點回傳回答至介面">
     <div class="node"><strong>網頁介面</strong><span>問題、回答、工具紀錄</span></div><span class="arrow">↔</span>
-    <div class="node"><strong>Python Agent</strong><span>FastAPI / 訊息迴圈</span></div><span class="arrow">↔</span>
+    <div class="node"><strong>LangGraph Agent</strong><span>模型 → 工具 → 驗證</span></div><span class="arrow">↔</span>
     <div class="node"><strong>Ollama</strong><span>Qwen3.5 4B · Q4_K_M</span></div>
   </div>
   <div class="tool-branch"><div class="connector">↕</div><strong>唯讀工具 ↔ PostgreSQL</strong><span>行情、新聞、向量與圖譜查詢</span></div>
-  <div class="flow-notes"><p>網頁與模型服務皆綁定 localhost<br>程式使用本機唯讀資料庫帳號</p><p>每次查詢最多 5 輪<br>介面即時顯示工具事件</p></div>
+  <div class="flow-notes"><p>網頁與模型服務皆綁定 localhost<br>程式使用本機唯讀資料庫帳號</p><p>每次查詢最多 5 輪<br>可切回原有 classic 執行路徑</p></div>
   <div class="footer"><span>最終回答整段顯示；工具事件透過 NDJSON 傳遞</span><span class="num">04 / 09</span></div>
-  <aside class="slide-note" data-source="src/app.py；src/agent.py；src/postgres_tools.py；scripts/start.ps1">模型不直接存取資料庫。它回傳工具名稱與 JSON 參數，Python 決定是否允許執行，再透過固定 SQL 查本機 PostgreSQL。新聞圖譜和向量索引在展示前離線建立，查詢時使用唯讀帳號。role=tool 的結果加入訊息後，才交回模型產生回答。Ollama 的雲端功能已關閉。</aside>
+  <aside class="slide-note" data-source="src/langgraph_agent.py；src/app.py；docs/LANGGRAPH.md">LangGraph 的 precheck、model、tools、verify 節點定義於程式中；模型透過 LangChain Ollama adapter 呼叫工具，但不能直接存取資料庫。Python 白名單驗證工具名稱與參數，固定 SQL 查本機 PostgreSQL。查詢結果加入訊息後交回模型；驗證節點檢查工具使用、比較結果與新聞 ID。此路徑可用 -Engine langgraph 啟動，預設 classic 保留。未實作持久化 checkpoint 或跨請求記憶。</aside>
 </section>
 
 <section class="slide" data-title="新聞 GraphRAG 流程" aria-label="第5頁 新聞 GraphRAG 流程">
@@ -91,9 +91,9 @@
     <div class="bar-row"><span>資料不足</span><div class="bar-track"><div class="bar-fill" style="width:40%"></div></div><span class="bar-value">3.20 秒</span></div>
     <div class="axis"><span>0</span><span>8 秒</span></div>
   </div><p class="results-note">2026-09-23 PostgreSQL 單次觀察值<br>非平均值、P95 或多使用者負載結果</p></div>
-  <div><div class="metric"><strong>100%</strong><span>GPU 載入</span><p>模型載入約 3.3 GB；上下文 8,192 tokens</p></div><div class="metric"><strong>33</strong><span>項自動測試通過</span><p>含新聞關係的原文證據驗證</p></div><div class="metric"><strong>12.08</strong><span>秒</span><p>另一次圖譜問答實測，呼叫 2 次圖譜工具</p></div></div></div>
+  <div><div class="metric"><strong>100%</strong><span>GPU 載入</span><p>模型載入約 3.3 GB；上下文 8,192 tokens</p></div><div class="metric"><strong>37</strong><span>項自動測試通過</span><p>含 LangGraph 工具路由與驗證</p></div><div class="metric"><strong>2.57</strong><span>秒</span><p>另一次 LangGraph + PostgreSQL 行情查詢</p></div></div></div>
   <div class="footer"><span>資料來源：本機測試紀錄；Ollama 0.34.2</span><span class="num">07 / 09</span></div>
-  <aside class="slide-note" data-source="docs/VALIDATION.md；docs/GRAPHRAG.md；tests/test_news_graph.py">圖中四個案例是加入圖譜前的單次量測，圖譜案例 12.08 秒是另一次實測，不能直接作平均或性能比較。所有數字不代表穩定效能或品質排名。Qwen3.5 模型檔約3.4 GB，載入時 Ollama 顯示全部位於 GPU。33 項自動測試驗證程式邏輯，不等於測試模型回答正確率。</aside>
+  <aside class="slide-note" data-source="docs/VALIDATION.md；docs/LANGGRAPH.md；tests/test_langgraph_agent.py">圖中四個案例是加入 LangGraph 前的單次量測，右側 2.57 秒是暖機後另一次 LangGraph + PostgreSQL 行情查詢，不能直接比較框架速度。所有數字不代表穩定效能或品質排名。Qwen3.5 模型檔約3.4 GB，載入時 Ollama 顯示全部位於 GPU。37 項自動測試驗證程式邏輯，不等於測試模型回答正確率。</aside>
 </section>
 
 <section class="slide" data-title="現場展示" aria-label="第8頁 現場展示">
@@ -111,12 +111,12 @@
   <table class="content roadmap"><thead><tr><th style="width:19%">面向</th><th style="width:39%">目前實作</th><th>後續方向</th></tr></thead><tbody>
     <tr><td>資料</td><td>本機 PostgreSQL + pgvector</td><td>資料更新排程與快照版本管理</td></tr>
     <tr><td>檢索</td><td>關鍵字＋300 則向量＋新聞圖譜</td><td>擴大圖譜，改善實體合併與多跳查詢</td></tr>
-    <tr><td>品質</td><td>固定案例與有限規則檢查</td><td>擴充評估集，檢查摘要與引用語意</td></tr>
+    <tr><td>Agent</td><td>LangGraph 節點與可切換執行路徑</td><td>評估集、checkpoint 與人工審核</td></tr>
     <tr><td>部署</td><td>單人、localhost、唯讀工具</td><td>登入、資料權限、稽核與負載測試</td></tr>
   </tbody></table>
   <p class="closing">這個專案驗證了本地推論與工具整合的完整流程。</p>
   <div class="footer"><span>原始碼：github.com/zunmatched/ollama_test</span><span class="num">09 / 09</span></div>
-  <aside class="slide-note" data-source="README.md；docs/POSTGRES.md；docs/GRAPHRAG.md">本機 PostgreSQL 資料層已完成。向量使用明確的本機 qwen3-embedding:0.6b 模型；原始資料庫來源不明的向量沒有混用。新聞圖譜目前只查直接關係，模型抽取仍需核對語意。正式多人服務還需要資料更新、權限管理、監控和容量規劃。</aside>
+  <aside class="slide-note" data-source="README.md；docs/POSTGRES.md；docs/GRAPHRAG.md；docs/LANGGRAPH.md">本機 PostgreSQL 資料層已完成。向量使用本機 qwen3-embedding:0.6b 模型；原始資料庫來源不明的向量沒有混用。LangGraph 執行路徑已實作且能切換，尚無 checkpoint 或人工審核。新聞圖譜只查直接關係，模型抽取仍需核對語意。正式多人服務還需要資料更新、權限管理、監控和容量規劃。</aside>
 </section>
 
 </div></div></main>
