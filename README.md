@@ -4,11 +4,11 @@
 
 本機 PostgreSQL 部署與切換方式見 [部署指南](docs/POSTGRES.md)。新聞可使用關鍵字、實體關係及本機向量查詢；建立與更新索引見 [GraphRAG 指南](docs/GRAPHRAG.md)。
 
-另提供可切換的 LangGraph 執行路徑，沿用相同唯讀工具與資料來源。執行 `powershell -File scripts/start.ps1 -Engine langgraph`，再於 `/api/status` 確認 `agent_engine`。節點流程、限制與面試展示方式見 [LangGraph 指南](docs/LANGGRAPH.md)。預設仍為原有的 classic 模式。
+另提供可切換的 LangGraph 執行路徑，沿用相同唯讀工具與資料來源。`start-demo.cmd` 使用 LangGraph；也可執行 `powershell -File scripts/start.ps1 -Engine langgraph`，再於 `/api/status` 確認 `agent_engine`。節點流程、限制與面試展示方式見 [LangGraph 指南](docs/LANGGRAPH.md)。直接執行 `scripts/start.ps1` 而不指定引擎時仍為 classic 模式。
 
 ## 這台筆電直接開啟
 
-雙擊根目錄的 **`start-demo.cmd`**，然後開啟 <http://127.0.0.1:8765>。
+雙擊根目錄的 **`start-demo.cmd`** 啟動 LangGraph 展示，再開啟 <http://127.0.0.1:8765>。原本的 agent 迴圈可用 `powershell -File scripts/start.ps1 -Engine classic` 切回。
 
 預設使用 Qwen3.5 4B（Q4_K_M）；首次模型載入較慢。上台前先跑一次「查行情」，保留服務執行並接上電源。每題都是獨立對話，不沿用上一題內容。需要切回已驗證的 Qwen3 4B Instruct 時，執行 `powershell -File scripts/start.ps1 -Model stock-agent:4b`。
 
@@ -31,7 +31,7 @@
 | `search_news_graph` | 查詢新聞抽取的實體關係與逐字原文證據；需本機 PostgreSQL |
 | `search_news_semantic` | 以本機 1024 維向量搜尋語意相近新聞；需本機 PostgreSQL |
 
-本機向量索引目前涵蓋快照全部 **300 則新聞**；圖譜抽取處理最新 30 則，其中 8 則有通過原文證據檢查的關係。原資料庫來源不明的 1,024 維向量沒有混用。圖譜關係由模型抽取，仍需人工檢查語意；價格還原方式與成交量單位尚未驗證。此專案展示歷史資料查詢，不提供買賣建議。
+本機快照於 2026-10-14 更新至當日行情（981 筆）與最新 300 則新聞；300 則新聞均已重新建立本機向量。圖譜抽取處理最新 100 則，其中 20 則產出 74 條原文證據；現場覆蓋率以 `/api/status` 的 `graph_news_rows` 為準。原資料庫來源不明的 1,024 維向量沒有混用。圖譜關係由模型抽取，仍需人工檢查語意；價格還原方式與成交量單位尚未驗證。此專案展示歷史資料查詢，不提供買賣建議。更新步驟見 [資料新鮮度指南](docs/FRESHNESS.md)。
 
 ## 從新環境安裝
 

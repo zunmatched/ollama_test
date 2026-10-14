@@ -9,8 +9,9 @@ import httpx
 ROOT = Path(__file__).resolve().parents[1]
 CASES = [
     ("prices", "查詢台積電（2330）最近五個交易日的收盤價。", "get_prices"),
-    ("compare", "比較 2330 和 2303 在 2026-09-01 至 2026-09-21 的價格變動百分比。", "compare_stocks"),
+    ("compare", "比較 2330 和 2303 在 2026-10-01 至 2026-10-14 的價格變動百分比。", "compare_stocks"),
     ("news", "搜尋「記憶體」最近三則新聞，整理重點並附來源日期。", "search_news"),
+    ("graph", "台積電最近三則新聞事件是什麼？請查新聞圖譜，列出每則新聞ID、日期與原文證據。", "search_news_graph"),
     ("missing", "查詢 2330 在 2030-01-01 的收盤價，只查這一天。", "get_prices"),
 ]
 
@@ -38,9 +39,9 @@ def main():
                     and e["result"].get("found") is False for e in price_calls)
             answer = next((e["text"] for e in events if e["type"] == "answer"), "")
             passed = passed and bool(answer) and "</think>" not in answer and "<think>" not in answer
-            if name == "news":
-                news_rows = [row for e in calls if e["name"] == "search_news" for row in e["result"].get("rows", [])]
-                passed = passed and len(news_rows) >= 3 and all(str(row["id"]) in answer for row in news_rows) and "\ufffd" not in answer
+            if name in ("news", "graph"):
+                source_rows = [row for e in calls if e["name"] == expected for row in e["result"].get("rows", [])]
+                passed = passed and len(source_rows) >= 3 and all(str(row["id"]) in answer for row in source_rows) and "\ufffd" not in answer
             result = {"case": name, "question": question, "tool_flow_passed": bool(passed), "answer": answer, "events": events}
             results.append(result)
             timing = next((e["elapsed_s"] for e in events if e["type"] == "done"), None)

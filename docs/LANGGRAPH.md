@@ -22,6 +22,8 @@ powershell -File scripts/start.ps1 -Engine langgraph
 # 已有本機 PostgreSQL 時預設使用它；必要時可指定 -Backend sqlite。
 ```
 
+面試用的 `start-demo.cmd` 直接啟動 LangGraph 路徑。
+
 原模式可用 `powershell -File scripts/start.ps1 -Engine classic` 切回。啟動器切換引擎時會重新啟動 8765 的本機網頁服務。請在 `/api/status` 檢查 `agent_engine`，並在網頁右側確認工具呼叫與來源。測試使用 `uv run pytest -q`，其中 LangGraph 單元測試採模擬模型，不依賴推論服務。實際展示前仍應以本機模型逐題核對回答與資料。
 
 面試可展示：同一題在兩種執行路徑下的工具紀錄；LangGraph 的模型、工具、驗證節點；缺少股票、模型不呼叫工具、超過輪數時的明確結果。履歷可寫「以 LangGraph StateGraph 與 LangChain Ollama adapter 整合本機股票查詢 agent，實作唯讀工具路由、證據檢查與可切換執行模式」。目前未實作跨請求記憶、checkpoint、人工審核節點或 LangSmith 追蹤；請勿宣稱有這些功能。

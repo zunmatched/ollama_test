@@ -22,7 +22,7 @@
   <p class="subtitle">在筆電上執行模型，<br>透過唯讀工具查詢資料並整理回答。</p>
   <div class="stack"><span>Ollama / Qwen3.5 4B</span><span>LangGraph / FastAPI</span><span>PostgreSQL + pgvector</span></div>
   <div class="footer"><span>個人部署與工具呼叫實作</span><span class="num">01 / 09</span></div>
-  <aside class="slide-note" data-source="README.md；docs/LANGGRAPH.md">這個專案以我自己的股票資料為例，驗證在一般筆電上部署 LLM 並整合工具的完整流程。LangGraph 是可切換的執行路徑，預設啟動仍是 classic；現場先在 /api/status 確認 agent_engine。模型負責選擇工具與說明，查詢與數字計算由 Python 完成。整份約5–7分鐘，現場 demo 另留2分鐘。</aside>
+  <aside class="slide-note" data-source="README.md；docs/LANGGRAPH.md">這個專案以我自己的股票資料為例，驗證在一般筆電上部署 LLM 並整合工具的完整流程。LangGraph 是可切換的執行路徑；start-demo.cmd 現在啟動 LangGraph，現場先在 /api/status 確認 agent_engine。模型負責選擇工具與說明，查詢與數字計算由 Python 完成。整份約5–7分鐘，現場 demo 另留2分鐘。</aside>
 </section>
 
 <section class="slide" data-title="系統功能" aria-label="第2頁 系統功能">
@@ -34,16 +34,16 @@
     <tr><td>資料不足</td><td>查詢快照範圍以外的日期</td><td>回報缺漏，不替換日期</td></tr>
   </tbody></table>
   <div class="footer"><span>每題獨立對話；歷史快照資料</span><span class="num">02 / 09</span></div>
-  <aside class="slide-note" data-source="src/tools.py；src/agent.py；docs/GRAPHRAG.md">新聞問句不一定使用圖譜。詢問公司與事件關係時，系統提示模型優先使用 search_news_graph；一般新聞問題仍可能使用關鍵字或向量搜尋。向量涵蓋全部 300 則新聞；圖譜只處理最新 30 則。介面顯示實際工具名稱、參數、結果與耗時。</aside>
+  <aside class="slide-note" data-source="src/tools.py；src/agent.py；docs/GRAPHRAG.md">新聞問句不一定使用圖譜。詢問公司與事件關係時，系統提示模型優先使用 search_news_graph；一般新聞問題仍可能使用關鍵字或向量搜尋。向量涵蓋全部 300 則新聞；圖譜抽取最新 100 則。介面顯示實際工具名稱、參數、結果與耗時。</aside>
 </section>
 
 <section class="slide" data-title="展示資料範圍" aria-label="第3頁 展示資料範圍">
   <h2>展示資料範圍</h2><p class="lead">這份 Demo 使用有限的本機市場資料快照。</p>
   <div class="two content"><div class="rule"><h3>可查股票</h3><p class="body">2002 中鋼　2303 聯電<br>2330 台積電　2337 旺宏<br>2344 華邦電　2408 南亞科<br>2454 聯發科　8046 南電</p></div>
-  <div class="rule"><h3>資料內容</h3><p class="body">989 筆歷史行情<br>300 則新聞；全數有向量<br>8 則有圖譜關係證據</p></div></div>
+  <div class="rule"><h3>資料內容</h3><p class="body">981 筆歷史行情<br>300 則新聞；全數有向量<br>20 則有圖譜關係證據</p></div></div>
   <p class="guard-note">例如 0050 尚未匯入。系統會先查核標的，再清楚回報資料缺漏。</p>
-  <div class="footer"><span>行情截止 2026-09-21；圖譜仍只涵蓋部分快照</span><span class="num">03 / 09</span></div>
-  <aside class="slide-note" data-source="scripts/setup-postgres.py；scripts/verify_postgres.py；docs/GRAPHRAG.md">這頁交代 demo 的資料範圍，避免將有限快照誤認為全市場或即時資料。使用者詢問不存在的 0050 時，程式會用 find_stocks 查核後明確回覆尚未匯入。資料庫部署在本機 PostgreSQL 17；300 則新聞全部建立向量，最新 30 則經過圖譜抽取，其中 8 則有通過原文檢查的關係。</aside>
+  <div class="footer"><span>行情截止 2026-10-14；新聞最新至當日 16:35（台北）</span><span class="num">03 / 09</span></div>
+  <aside class="slide-note" data-source="docs/FRESHNESS.md；scripts/verify_postgres.py；docs/GRAPHRAG.md">這頁交代 demo 的資料範圍，避免將有限快照誤認為全市場或即時資料。使用者詢問不存在的 0050 時，程式會用 find_stocks 查核後明確回覆尚未匯入。資料庫部署在本機 PostgreSQL 17；300 則新聞全部建立向量，最新 100 則經過圖譜抽取。只有部分文章能通過原文證據檢查，請以工具紀錄與 /api/status 確認實際覆蓋量。</aside>
 </section>
 
 <section class="slide" data-title="系統架構" aria-label="第4頁 系統架構">
@@ -60,17 +60,17 @@
 </section>
 
 <section class="slide" data-title="新聞 GraphRAG 流程" aria-label="第5頁 新聞 GraphRAG 流程">
-  <h2>新聞 GraphRAG 流程</h2><p class="question">「聯發科最近有哪些新聞事件？」</p>
+  <h2>新聞 GraphRAG 流程</h2><p class="question">「台積電最近三則新聞事件是什麼？」</p>
   <div class="tool-demo">
     <div><div class="code-label">模型選擇圖譜工具</div><pre><span class="accent">search_news_graph</span>({
-  "keyword": "聯發科",
-  "limit": 5
+  "keyword": "台積電",
+  "limit": 3
 })</pre></div>
     <ol class="steps"><li>本機模型預先抽取新聞關係</li><li>PostgreSQL 保存實體與原文證據</li><li>工具查詢直接關係及新聞 ID</li><li>模型依查詢結果回答並附來源</li></ol>
   </div>
-  <p class="formula">實測：<span class="accent">300 則向量索引</span>；8 則產出 31 條原文證據</p>
+  <p class="formula">更新：<span class="accent">300 則向量索引</span>；20 則產出 74 條原文證據</p>
   <div class="footer"><span>關係問句優先查圖譜；其他新聞問句可能改用關鍵字或向量</span><span class="num">05 / 09</span></div>
-  <aside class="slide-note" data-source="docs/GRAPHRAG.md；src/agent.py；src/postgres_tools.py">這是已實測成功的問句，模型呼叫 search_news_graph 兩次，最後附新聞 ID 與日期，總耗時 12.08 秒。新聞抽取時會驗證引用片段確實出現在原文，仍需人工判斷關係解讀是否正確。圖譜目前只查直接關係；沒有命中時可改用關鍵字搜尋。模型會自行選擇工具，不保證每個新聞問題都走圖譜。</aside>
+  <aside class="slide-note" data-source="docs/FRESHNESS.md；docs/GRAPHRAG.md；src/postgres_tools.py">2026-10-14 更新後，這題實測呼叫 search_news_graph，回傳三則新聞 ID、日期與原文證據，總耗時 7.19 秒。新聞抽取時會驗證引用片段確實出現在原文，仍需人工判斷關係解讀是否正確。圖譜目前只查直接關係；沒有命中時可改用關鍵字搜尋。模型會自行選擇工具，不保證每個新聞問題都走圖譜。</aside>
 </section>
 
 <section class="slide" data-title="執行限制與回答檢查" aria-label="第6頁 執行限制與回答檢查">
@@ -84,26 +84,26 @@
 
 <section class="slide" data-title="筆電實測結果" aria-label="第7頁 筆電實測結果">
   <h2>筆電實測結果</h2><p class="lead">Qwen3.5 4B Q4_K_M · RTX 4070 Laptop · 8 GB VRAM</p>
-  <div class="results"><div><div class="bars" role="img" aria-label="PostgreSQL Qwen3.5四題總耗時：行情4.06秒、比較3.80秒、新聞6.20秒、資料不足3.20秒，橫軸0到8秒">
-    <div class="bar-row"><span>行情查詢</span><div class="bar-track"><div class="bar-fill" style="width:50.75%"></div></div><span class="bar-value">4.06 秒</span></div>
-    <div class="bar-row"><span>雙股比較</span><div class="bar-track"><div class="bar-fill" style="width:47.5%"></div></div><span class="bar-value">3.80 秒</span></div>
-    <div class="bar-row"><span>新聞摘要</span><div class="bar-track"><div class="bar-fill" style="width:77.5%"></div></div><span class="bar-value">6.20 秒</span></div>
-    <div class="bar-row"><span>資料不足</span><div class="bar-track"><div class="bar-fill" style="width:40%"></div></div><span class="bar-value">3.20 秒</span></div>
-    <div class="axis"><span>0</span><span>8 秒</span></div>
-  </div><p class="results-note">2026-09-23 PostgreSQL 單次觀察值<br>非平均值、P95 或多使用者負載結果</p></div>
-  <div><div class="metric"><strong>100%</strong><span>GPU 載入</span><p>模型載入約 3.3 GB；上下文 8,192 tokens</p></div><div class="metric"><strong>37</strong><span>項自動測試通過</span><p>含 LangGraph 工具路由與驗證</p></div><div class="metric"><strong>2.57</strong><span>秒</span><p>另一次 LangGraph + PostgreSQL 行情查詢</p></div></div></div>
-  <div class="footer"><span>資料來源：本機測試紀錄；Ollama 0.34.2</span><span class="num">07 / 09</span></div>
-  <aside class="slide-note" data-source="docs/VALIDATION.md；docs/LANGGRAPH.md；tests/test_langgraph_agent.py">圖中四個案例是加入 LangGraph 前的單次量測，右側 2.57 秒是暖機後另一次 LangGraph + PostgreSQL 行情查詢，不能直接比較框架速度。所有數字不代表穩定效能或品質排名。Qwen3.5 模型檔約3.4 GB，載入時 Ollama 顯示全部位於 GPU。37 項自動測試驗證程式邏輯，不等於測試模型回答正確率。</aside>
+  <div class="results"><div><div class="bars" role="img" aria-label="2026年10月14日 LangGraph 與 PostgreSQL 四題總耗時：行情4.12秒、比較4.28秒、新聞9.37秒、資料不足2.25秒，橫軸0到10秒">
+    <div class="bar-row"><span>行情查詢</span><div class="bar-track"><div class="bar-fill" style="width:41.2%"></div></div><span class="bar-value">4.12 秒</span></div>
+    <div class="bar-row"><span>雙股比較</span><div class="bar-track"><div class="bar-fill" style="width:42.8%"></div></div><span class="bar-value">4.28 秒</span></div>
+    <div class="bar-row"><span>新聞摘要</span><div class="bar-track"><div class="bar-fill" style="width:93.7%"></div></div><span class="bar-value">9.37 秒</span></div>
+    <div class="bar-row"><span>資料不足</span><div class="bar-track"><div class="bar-fill" style="width:22.5%"></div></div><span class="bar-value">2.25 秒</span></div>
+    <div class="axis"><span>0</span><span>10 秒</span></div>
+  </div><p class="results-note">2026-10-14 LangGraph + PostgreSQL 單次觀察<br>非平均值、P95 或多使用者負載結果</p></div>
+  <div><div class="metric"><strong>300</strong><span>則新聞向量</span><p>本機 qwen3-embedding:0.6b</p></div><div class="metric"><strong>37</strong><span>項自動測試通過</span><p>含 LangGraph 工具路由與驗證</p></div><div class="metric"><strong>7.19</strong><span>秒</span><p>另一次三則新聞圖譜問答實測</p></div></div></div>
+  <div class="footer"><span>資料來源：2026-10-14 本機測試紀錄</span><span class="num">07 / 09</span></div>
+  <aside class="slide-note" data-source="docs/local-results/smoke-results.json；docs/FRESHNESS.md；tests/test_langgraph_agent.py">圖中四個案例是 2026-10-14 真模型單次量測；右側 7.19 秒是同日另一個三則新聞圖譜問答。不能據此推論穩定速度或答案正確率。37 項自動測試驗證程式邏輯；新聞摘要與關係語意仍須人工核對來源。</aside>
 </section>
 
 <section class="slide" data-title="現場展示" aria-label="第8頁 現場展示">
   <h2>現場展示</h2><p class="lead">先看答案，再展開工具結果核對。</p>
   <div class="demo-list"><div class="demo-item"><span class="index">01</span><h3>查行情</h3><div><p>「台積電最近五個交易日的收盤價？」</p><small>核對代號、五筆資料與截止日期</small></div></div>
   <div class="demo-item"><span class="index">02</span><h3>比較價格</h3><div><p>「比較 2330 和 2303 的期間價格變化。」</p><small>查看共同交易日與程式計算結果</small></div></div>
-  <div class="demo-item"><span class="index">03</span><h3>新聞關聯</h3><div><p>「聯發科最近有哪些新聞事件？」</p><small>查看 search_news_graph 與原文證據</small></div></div></div>
+  <div class="demo-item"><span class="index">03</span><h3>新聞關聯</h3><div><p>「台積電最近三則新聞事件是什麼？」</p><small>查看 search_news_graph 與原文證據</small></div></div></div>
   <div class="demo-actions"><a class="primary" href="http://127.0.0.1:8765/" target="_blank" rel="noopener">開啟本機 Demo ↗</a><button id="copy-question" type="button">複製圖譜題目</button><span id="copy-status" class="status-message" aria-live="polite">先以 start-demo.cmd 啟動服務</span></div>
   <div class="footer"><span>圖譜只涵蓋部分新聞；現場以右側工具紀錄確認實際路徑</span><span class="num">08 / 09</span></div>
-  <aside class="slide-note" data-source="docs/DEMO.md；assets/app.js；docs/GRAPHRAG.md">可從這頁開啟已啟動的 demo。示範先跑查行情，再比較，最後問新聞關聯並展開工具紀錄。圖譜提問使用實測成功的聯發科案例；如果模型改選其他工具，應依現場紀錄如實說明。資料不足案例仍可作為備用展示。若服務發生問題，本機 docs/local-results/demo-backup.html 保存先前實測結果；使用時明確說明是備援紀錄。</aside>
+  <aside class="slide-note" data-source="docs/DEMO.md；assets/app.js；docs/FRESHNESS.md">可從這頁開啟已啟動的 demo。示範先跑查行情，再比較，最後問新聞關聯並展開工具紀錄。圖譜提問改用更新後有證據的台積電案例；如果模型改選其他工具，應依現場紀錄如實說明。資料不足案例仍可作為備用展示。若服務發生問題，本機 docs/local-results/demo-backup.html 保存先前實測結果；使用時明確說明是備援紀錄。</aside>
 </section>
 
 <section class="slide" data-title="目前範圍與後續擴充" aria-label="第9頁 目前範圍與後續擴充">
@@ -189,7 +189,7 @@
     else if(event.key.toLowerCase() === 'f') fullscreen();
   });
   byId('copy-question').addEventListener('click', async () => {
-    const text = '聯發科最近有哪些新聞事件？請查新聞圖譜並附原文證據。';
+    const text = '台積電最近三則新聞事件是什麼？請查新聞圖譜，列出每則新聞ID、日期與原文證據。';
     try {await navigator.clipboard.writeText(text); byId('copy-status').textContent = '已複製，可貼到 Demo 問題欄';}
     catch {byId('copy-status').textContent = '請使用 Demo 內的「新聞關聯」按鈕';}
   });

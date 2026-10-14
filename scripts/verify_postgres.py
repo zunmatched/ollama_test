@@ -1,5 +1,6 @@
 """Integration check against the local imported snapshot; never prints records or secrets."""
 import sys
+from datetime import date, timedelta
 from pathlib import Path
 
 import pg8000.dbapi
@@ -13,13 +14,16 @@ from src.tools import StockTools
 def main():
     pg = PostgresTools(ROOT / ".runtime/postgres-reader.json")
     sqlite = StockTools()
+    latest = date.fromisoformat(sqlite.metadata()["price_last_date"])
+    comparison_start = (latest - timedelta(days=14)).isoformat()
+    comparison_end = latest.isoformat()
     cases = [
         ("find_stocks", {"keyword": "台積電"}),
         ("find_stocks", {"keyword": "' OR 1=1 --"}),
         ("find_stocks", {"keyword": "%"}),
         ("get_prices", {"ticker": "2330"}),
         ("get_prices", {"ticker": "2330", "start_date": "2030-01-01", "end_date": "2030-01-01"}),
-        ("compare_stocks", {"tickers": ["2330", "2303"], "start_date": "2026-09-01", "end_date": "2026-09-21"}),
+        ("compare_stocks", {"tickers": ["2330", "2303"], "start_date": comparison_start, "end_date": comparison_end}),
         ("search_news", {"ticker": "2330"}),
         ("search_news", {"keyword": "記憶體"}),
         ("search_news", {"keyword": "記憶體", "ticker": "2330"}),
